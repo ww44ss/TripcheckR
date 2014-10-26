@@ -1,0 +1,34 @@
+---
+title: "Twitter Tryout"
+author: "Winston"
+date: "October 26, 2014"
+output: html_document
+---
+
+```{r}
+## A real example, but using a fictitious consumerkey and consumer
+## secret - you’ll need to supply your own
+reqURL <- "https://api.twitter.com/oauth/request_token"
+accessURL <- "http://api.twitter.com/oauth/access_token"
+authURL <- "http://api.twitter.com/oauth/authorize"
+consumerKey <- "7UddBUI2lFO6dIJuOplYuGSr4"
+consumerSecret <- "UO50oEmKoIKP6LRBNrcs4LsPVekltKrDWQh6tMn7nQ9t5eB6SI"
+twitCred <- OAuthFactory$new(consumerKey=consumerKey,
+consumerSecret=consumerSecret,
+requestURL=reqURL,
+accessURL=accessURL,
+authURL=authURL)
+twitCred$handshake()
+registerTwitterOAuth(twitCred)
+```
+
+
+```{r}
+
+require(twitteR)
+
+twts<-userTimeline("@TripCheckUS20B", n=100)
+
+str(twts)
+
+```
