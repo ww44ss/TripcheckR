@@ -36,7 +36,6 @@ hwy20Bfull<-userTimeline(user, n=500, maxID=NULL, sinceID=NULL, includeRts=FALSE
 ##convert data to dataframe
 hwy20_df<-do.call(rbind,lapply(hwy20Bfull,as.data.frame))
 
-
 ```
 
 The data pulled is from `r hwy20_df$created[1]` to `r hwy20_df$created[length(hwy20_df$created)]`
