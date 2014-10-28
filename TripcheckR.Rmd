@@ -1,6 +1,6 @@
 ---
-title: "Twitter Tryout"
-author: "Winston"
+title: "Highway 20 Santiam Pass"
+author: "Winston Saunders"
 date: "October 26, 2014"
 output: html_document
 ---
@@ -26,13 +26,24 @@ registerTwitterOAuth(twitCred)
 ```
 
 
+```{r "get_tweets"}
+
+## Get the relevnat tweet data
+
+user <- getUser("@TripCheckUS20B")
+hwy20Bfull<-userTimeline(user, n=500, maxID=NULL, sinceID=NULL, includeRts=FALSE)
+
+##convert data to dataframe
+hwy20_df<-do.call(rbind,lapply(hwy20Bfull,as.data.frame))
+
+
+```
+
+The data pulled is from `r hwy20_df$created[1]` to `r hwy20_df$created[length(hwy20_df$created)]`
+
 ```{r}
 
 
 
-user <- getUser("@TripCheckUS20B")
-hwy20B<-userTimeline(user, n=500, maxID=NULL, sinceID=NULL, includeRts=FALSE)
 
-
-hwy20B
 ```
