@@ -6,6 +6,8 @@ output: html_document
 ---
 
 ```{r}
+
+require(TwitteR)
 ## A real example, but using a fictitious consumerkey and consumer
 ## secret - you’ll need to supply your own
 reqURL <- "https://api.twitter.com/oauth/request_token"
