@@ -7,13 +7,13 @@ output: html_document
 
 ```{r}
 
-require(TwitteR)
-require(OAuthFactory)
+require(twitteR)
+require(ROAuth)
 ## A real example, but using a fictitious consumerkey and consumer
 ## secret - you’ll need to supply your own
 reqURL <- "https://api.twitter.com/oauth/request_token"
-accessURL <- "http://api.twitter.com/oauth/access_token"
-authURL <- "http://api.twitter.com/oauth/authorize"
+accessURL <- "https://api.twitter.com/oauth/access_token"
+authURL <- "https://api.twitter.com/oauth/authorize"
 consumerKey <- "7UddBUI2lFO6dIJuOplYuGSr4"
 consumerSecret <- "UO50oEmKoIKP6LRBNrcs4LsPVekltKrDWQh6tMn7nQ9t5eB6SI"
 twitCred <- OAuthFactory$new(consumerKey=consumerKey,
@@ -28,10 +28,11 @@ registerTwitterOAuth(twitCred)
 
 ```{r}
 
-require(twitteR)
 
-twts<-userTimeline("@TripCheckUS20B", n=100)
 
-str(twts)
+user <- getUser("@TripCheckUS20B")
+hwy20B<-userTimeline(user, n=500, maxID=NULL, sinceID=NULL, includeRts=FALSE)
 
+
+hwy20B
 ```
