@@ -24,9 +24,10 @@ twitCred <- OAuthFactory$new(consumerKey=consumerKey,
         accessURL=accessURL,
         authURL=authURL)
 
-readline()
 twitCred$handshake()
+```
 
+```{r}
 registerTwitterOAuth(twitCred)
 
 ```
@@ -43,6 +44,9 @@ registerTwitterOAuth(twitCred)
         ##convert data to dataframe
         hwy20_df<-do.call(rbind,lapply(hwy20Bfull,as.data.frame))
 
+        ##convert times to R format
+        hwy20_df$created<-as.Date(hwy20_df$created)
+
 ```
 
 The data pulled is from `r hwy20_df$created[1]` to `r hwy20_df$created[length(hwy20_df$created)]`
@@ -55,14 +59,53 @@ hwy20_Santiam <-hwy20_df[grep("Santiam Pass Summit", hwy20_df$text),]
 
 hwy20_SantiamCrash <-hwy20_Santiam[grep("crash", hwy20_Santiam$text),]
 
+##dedup the data
+
+hwy20_SantiamCrash<-hwy20_SantiamCrash[!duplicated(hwy20_SantiamCrash$created),]
+
+hwy20_SantiamCrash$text<-substring(hwy20_SantiamCrash$text,6,12)
+
+dim(hwy20_SantiamCrash)
+
 
 
 ```
 
 ```{r "plot_the_data"}
-require (ggplot2)
-require(lineplot)
 
-lineplot(hwy20_SantiamCrash$created, )
-require(ggplot2)
-require(timeline)
+
+##timeline(hwy20_SantiamCrash)
+
+rangeYM<- c(hwy20_SantiamCrash$created[length(hwy20_SantiamCrash$created)], hwy20_SantiamCrash$created[1])
+
+rangeYM
+
+plot(NA,ylim=c(-1,1),xlim=rangeYM,ann=FALSE,axes=FALSE)
+abline(h=0,lwd=2,col="#5B7FA3")
+
+ypts <- rep_len(c(-1,1), length.out=nrow(hwy20_SantiamCrash))
+txtpts <- rep_len(c(1,3), length.out=nrow(hwy20_SantiamCrash))
+lblpts <- rep_len(c(1,3), length.out=nrow(hwy20_SantiamCrash))
+segments(hwy20_SantiamCrash$created,0,hwy20_SantiamCrash$created,ypts,col="gray80")
+
+axis.Date(
+ 1,
+ at=seq.Date(rangeYM[1],rangeYM[2],by="month"),
+ format="%Y-%m",
+ cex.axis=0.6,
+ pos=0,
+ lwd=0,
+ lwd.tick=2,
+ col="#5B7FA3",
+ font=2
+)
+
+points(hwy20_SantiamCrash$created,y=ypts, pch="-", cex=1.5, col="#5B7FA3")
+par(xpd=NA)
+text(
+  hwy20_SantiamCrash$created, y=ypts,
+  labels=hwy20_SantiamCrash$text, cex=0.7, pos=lblpts, srt=90
+)
+par(xpd=FALSE)
+
+
