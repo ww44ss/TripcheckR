@@ -5,24 +5,30 @@ date: "October 26, 2014"
 output: html_document
 ---
 
-```{r}
+```{r, results:asis}
 
 require(twitteR)
 require(ROAuth)
 ## A real example, but using a fictitious consumerkey and consumer
 ## secret - you’ll need to supply your own
-reqURL <- "https://api.twitter.com/oauth/request_token"
-accessURL <- "https://api.twitter.com/oauth/access_token"
-authURL <- "https://api.twitter.com/oauth/authorize"
-consumerKey <- "7UddBUI2lFO6dIJuOplYuGSr4"
-consumerSecret <- "UO50oEmKoIKP6LRBNrcs4LsPVekltKrDWQh6tMn7nQ9t5eB6SI"
+
+        reqURL <- "https://api.twitter.com/oauth/request_token"
+        accessURL <- "https://api.twitter.com/oauth/access_token"
+        authURL <- "https://api.twitter.com/oauth/authorize"
+        consumerKey <- "7UddBUI2lFO6dIJuOplYuGSr4"
+        consumerSecret <- "UO50oEmKoIKP6LRBNrcs4LsPVekltKrDWQh6tMn7nQ9t5eB6SI"
+
 twitCred <- OAuthFactory$new(consumerKey=consumerKey,
-consumerSecret=consumerSecret,
-requestURL=reqURL,
-accessURL=accessURL,
-authURL=authURL)
+        consumerSecret=consumerSecret,
+        requestURL=reqURL,
+        accessURL=accessURL,
+        authURL=authURL)
+
+readline()
 twitCred$handshake()
+
 registerTwitterOAuth(twitCred)
+
 ```
 
 
@@ -30,19 +36,33 @@ registerTwitterOAuth(twitCred)
 
 ## Get the relevnat tweet data
 
-user <- getUser("@TripCheckUS20B")
-hwy20Bfull<-userTimeline(user, n=500, maxID=NULL, sinceID=NULL, includeRts=FALSE)
+        user <- getUser("@TripCheckUS20B")
 
-##convert data to dataframe
-hwy20_df<-do.call(rbind,lapply(hwy20Bfull,as.data.frame))
+        hwy20Bfull<-userTimeline(user, n=600, maxID=NULL, sinceID=NULL, includeRts=FALSE)
+
+        ##convert data to dataframe
+        hwy20_df<-do.call(rbind,lapply(hwy20Bfull,as.data.frame))
 
 ```
 
 The data pulled is from `r hwy20_df$created[1]` to `r hwy20_df$created[length(hwy20_df$created)]`
 
-```{r}
+```{r "clean"}
 
+dim(hwy20_df)
+##Get tweets with Santiam Pass
+hwy20_Santiam <-hwy20_df[grep("Santiam Pass Summit", hwy20_df$text),]
+
+hwy20_SantiamCrash <-hwy20_Santiam[grep("crash", hwy20_Santiam$text),]
 
 
 
 ```
+
+```{r "plot_the_data"}
+require (ggplot2)
+require(lineplot)
+
+lineplot(hwy20_SantiamCrash$created, )
+require(ggplot2)
+require(timeline)
