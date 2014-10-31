@@ -1,55 +1,12 @@
 ---
-title: "TripCheckR"
-author: "Winston Saunders"
-date: "October 26, 2014"
+title: "Santiam Pass"
+author: "Winston"
+date: "October 31, 2014"
 output: html_document
 ---
 
-```{r, results:asis}
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
 
-require(twitteR)
-require(ROAuth)
-## A real example, but using a fictitious consumerkey and consumer
-## secret - you’ll need to supply your own
-
-        reqURL <- "https://api.twitter.com/oauth/request_token"
-        accessURL <- "https://api.twitter.com/oauth/access_token"
-        authURL <- "https://api.twitter.com/oauth/authorize"
-        consumerKey <- "7UddBUI2lFO6dIJuOplYuGSr4"
-        consumerSecret <- "UO50oEmKoIKP6LRBNrcs4LsPVekltKrDWQh6tMn7nQ9t5eB6SI"
-
-twitCred <- OAuthFactory$new(consumerKey=consumerKey,
-        consumerSecret=consumerSecret,
-        requestURL=reqURL,
-        accessURL=accessURL,
-        authURL=authURL)
-
-twitCred$handshake()
-```
-
-```{r}
-registerTwitterOAuth(twitCred)
-
-```
-
-
-```{r "get_tweets"}
-
-## Get the relevnat tweet data
-
-        user <- getUser("@TripCheckUS20B")
-
-        hwy20Bfull<-userTimeline(user, n=600, maxID=NULL, sinceID=NULL, includeRts=FALSE)
-
-        ##convert data to dataframe
-        hwy20_df<-do.call(rbind,lapply(hwy20Bfull,as.data.frame))
-
-        ##convert times to R format
-        hwy20_df$created<-as.Date(hwy20_df$created)
-
-```
-
-The data pulled is from `r hwy20_df$created[1]` to `r hwy20_df$created[length(hwy20_df$created)]`
 
 ```{r "clean"}
 
@@ -110,3 +67,18 @@ text(
 par(xpd=FALSE)
 
 
+
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+summary(cars)
+```
+
+You can also embed plots, for example:
+
+```{r, echo=FALSE}
+plot(cars)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
