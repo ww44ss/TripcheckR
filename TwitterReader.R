@@ -1,5 +1,5 @@
 ## Rscript for reading twitter logs, cleaning them, adn storing the results as a .csv
-##
+## Currently just a straight forward data pull
 ##
 require(twitteR)
 require(ROAuth)
