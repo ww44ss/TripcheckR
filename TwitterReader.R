@@ -46,5 +46,9 @@ clean_data$created<-as.Date(hwy20_df$created)
 
 write.csv(clean_data, paste0(name,".csv"))
 
+##display a bunch of stuff
+print(paste0(name,".csv"))
+dim(clean_data)
+head(clean_data)
 
 
