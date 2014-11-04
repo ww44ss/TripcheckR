@@ -1,6 +1,8 @@
 ## Rscript for reading twitter logs, cleaning them, adn storing the results as a .csv
-## Currently just a straight forward data pull of data
-##
+## Currently just a straight forward data pull of data.
+
+## You will need to provide your own keys
+
 require(twitteR)
 require(ROAuth)
 
@@ -18,6 +20,7 @@ twitCred <- OAuthFactory$new(consumerKey=consumerKey,
 
 twitCred$handshake()
 
+readline()
 ##Program will pause for input
 
 registerTwitterOAuth(twitCred)
@@ -26,7 +29,7 @@ registerTwitterOAuth(twitCred)
 
 ## Get the relevant tweet data
 
-name <- "TripCheckUS20"
+name <- "TripCheckUS20A"
 
 user <- getUser(paste0("@", name))
 
@@ -42,7 +45,7 @@ user_data<-userTimeline(user, n=600, maxID=NULL, sinceID=NULL, includeRts=FALSE)
 clean_data<-do.call(rbind,lapply(user_data,as.data.frame))
 
 ##convert times to R format
-clean_data$created<-as.Date(hwy20_df$created)
+clean_data$created<-as.Date(clean_data$created)
 
 write.csv(clean_data, paste0(name,".csv"))
 
