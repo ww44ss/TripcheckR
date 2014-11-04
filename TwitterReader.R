@@ -1,5 +1,5 @@
 ## Rscript for reading twitter logs, cleaning them, adn storing the results as a .csv
-## Currently just a straight forward data pull
+## Currently just a straight forward data pull of data
 ##
 require(twitteR)
 require(ROAuth)
@@ -7,8 +7,8 @@ require(ROAuth)
 reqURL <- "https://api.twitter.com/oauth/request_token"
 accessURL <- "https://api.twitter.com/oauth/access_token"
 authURL <- "https://api.twitter.com/oauth/authorize"
-consumerKey <- "7UddBUI2lFO6dIJuOplYuGSr4"
-consumerSecret <- "UO50oEmKoIKP6LRBNrcs4LsPVekltKrDWQh6tMn7nQ9t5eB6SI"
+consumerKey <- "Ys4tfBmMdPcZT1zCvvInGyQ8a"
+consumerSecret <- "t5k5I8kwqDkOiDtYVKgjGbBgZc8FVleGvubezLhD1aVVS0rp4s"
 
 twitCred <- OAuthFactory$new(consumerKey=consumerKey,
                              consumerSecret=consumerSecret,
@@ -32,14 +32,19 @@ user <- getUser(paste0("@", name))
 
 ##get the data
 ## n is an adjustable variable
+## user_data is a generic filename
 
-hwy20Bfull<-userTimeline(user, n=600, maxID=NULL, sinceID=NULL, includeRts=FALSE)
+user_data<-userTimeline(user, n=600, maxID=NULL, sinceID=NULL, includeRts=FALSE)
+
 
 ##convert data to dataframe
-hwy20_df<-do.call(rbind,lapply(hwy20Bfull,as.data.frame))
+
+clean_data<-do.call(rbind,lapply(user_data,as.data.frame))
 
 ##convert times to R format
-hwy20_df$created<-as.Date(hwy20_df$created)
+clean_data$created<-as.Date(hwy20_df$created)
 
-write.csv(hwy20_df, paste0(name,".csv"))
+write.csv(clean_data, paste0(name,".csv"))
+
+
 
