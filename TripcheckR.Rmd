@@ -5,65 +5,40 @@ date: "October 26, 2014"
 output: html_document
 ---
 
-```{r, results:asis}
-
-require(twitteR)
-require(ROAuth)
-## A real example, but using a fictitious consumerkey and consumer
-## secret - you’ll need to supply your own
-
-        reqURL <- "https://api.twitter.com/oauth/request_token"
-        accessURL <- "https://api.twitter.com/oauth/access_token"
-        authURL <- "https://api.twitter.com/oauth/authorize"
-        consumerKey <- "7UddBUI2lFO6dIJuOplYuGSr4"
-        consumerSecret <- "UO50oEmKoIKP6LRBNrcs4LsPVekltKrDWQh6tMn7nQ9t5eB6SI"
-
-twitCred <- OAuthFactory$new(consumerKey=consumerKey,
-        consumerSecret=consumerSecret,
-        requestURL=reqURL,
-        accessURL=accessURL,
-        authURL=authURL)
-
-twitCred$handshake()
-```
-
-```{r}
-registerTwitterOAuth(twitCred)
-
-```
-
-
 ```{r "get_tweets"}
+
+##This program assumes you have already run the TwitterReader.R to download a feed timeline. 
+##It reads the data in teh form of a .csv 
 
 ## Get the relevnat tweet data
 
-        user <- getUser("@TripCheckUS20B")
+        file_name <- "TripCheckUS20B"
 
-        hwy20Bfull<-userTimeline(user, n=600, maxID=NULL, sinceID=NULL, includeRts=FALSE)
+        hwy20Bfull<-read.csv(paste0(file_name, ".csv"))
+
+        ##make the date column a date
+        hwy20Bfull$created<-as.Date(hwy20Bfull$created)
 
         ##convert data to dataframe
-        hwy20_df<-do.call(rbind,lapply(hwy20Bfull,as.data.frame))
-
-        ##convert times to R format
-        hwy20_df$created<-as.Date(hwy20_df$created)
+        hwy_df<-hwy20Bfull
 
 ```
 
-The data pulled is from `r hwy20_df$created[1]` to `r hwy20_df$created[length(hwy20_df$created)]`
+The data pulled is from `r hwy_df$created[1]` to `r hwy_df$created[length(hwy_df$created)]`
 
 ```{r "clean"}
 
-dim(hwy20_df)
+dim(hwy_df)
 ##Get tweets with Santiam Pass
-hwy20_Santiam <-hwy20_df[grep("Santiam Pass Summit", hwy20_df$text),]
+hwy20_Santiam <-hwy_df[grep("Santiam Pass Summit", hwy_df$text),]
 
 hwy20_SantiamCrash <-hwy20_Santiam[grep("crash", hwy20_Santiam$text),]
 
 ##dedup the data
 
 hwy20_SantiamCrash<-hwy20_SantiamCrash[!duplicated(hwy20_SantiamCrash$created),]
-
-hwy20_SantiamCrash$text<-substring(hwy20_SantiamCrash$text,6,12)
+## get some details on the crash from teh text string
+hwy20_SantiamCrash$text<-substring(hwy20_SantiamCrash$text,7,12)
 
 dim(hwy20_SantiamCrash)
 
@@ -77,17 +52,20 @@ dim(hwy20_SantiamCrash)
 ##timeline(hwy20_SantiamCrash)
 
 rangeYM<- c(hwy20_SantiamCrash$created[length(hwy20_SantiamCrash$created)], hwy20_SantiamCrash$created[1])
+```
 
+```{r}
 rangeYM
 
 plot(NA,ylim=c(-1,1),xlim=rangeYM,ann=FALSE,axes=FALSE)
 abline(h=0,lwd=2,col="#5B7FA3")
 
 ypts <- rep_len(c(-1,1), length.out=nrow(hwy20_SantiamCrash))
+y0pts = rep_len(0, length.out=nrow(hwy20_SantiamCrash))
 txtpts <- rep_len(c(1,3), length.out=nrow(hwy20_SantiamCrash))
 ylblpts <- rep_len(c(-.9,.9, -.7, .7, -.5, .5), length.out=nrow(hwy20_SantiamCrash))
 lblpts <- rep_len(c(3,1), length.out=nrow(hwy20_SantiamCrash))
-segments(hwy20_SantiamCrash$created,0,hwy20_SantiamCrash$created,ypts,col="gray80")
+segments(as.Date(hwy20_SantiamCrash$created),y0pts,as.Date(hwy20_SantiamCrash$created),1,col="gray80")
 
 axis.Date(
  1,
@@ -110,3 +88,4 @@ text(
 par(xpd=FALSE)
 
 
+```
