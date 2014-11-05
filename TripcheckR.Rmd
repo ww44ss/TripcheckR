@@ -37,10 +37,20 @@ hwy20_SantiamCrash <-hwy20_Santiam[grep("crash", hwy20_Santiam$text),]
 ##dedup the data
 
 hwy20_SantiamCrash<-hwy20_SantiamCrash[!duplicated(hwy20_SantiamCrash$created),]
-## get some details on the crash from teh text string
-hwy20_SantiamCrash$text<-substring(hwy20_SantiamCrash$text,7,12)
 
-dim(hwy20_SantiamCrash)
+
+
+## get some details on the crash from teh text string
+        ##this usually will have a mile number
+        
+        midist<-lapply(hwy20_SantiamCrash$text, function(x) {y<- gregexpr("Mi", x)
+                                                             print(y[1])})
+                                                            # if (y != FALSE) substring(x, y-3, y-1)})
+        
+#hwy20_SantiamCrash$text<-substring(hwy20_SantiamCrash$text,7,12)
+        
+
+        dim(hwy20_SantiamCrash)
 
 
 
