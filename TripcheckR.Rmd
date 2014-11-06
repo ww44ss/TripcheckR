@@ -48,14 +48,24 @@ hwy20_SantiamCrash<-hwy20_SantiamCrash[!duplicated(hwy20_SantiamCrash$created),]
                                                              else "NA"})
                                                             # if (y != FALSE) substring(x, y-3, y-1)})
         
+        distance<-as.numeric(midist)
 
-        dir<-lapply(hwy20_SantiamCrash$text, function(x) {y<- regexpr("Mi", x)
+        direction<-lapply(hwy20_SantiamCrash$text, function(x) {y<- regexpr("Mi", x)
                                                              if (y >4) substring(x,y+2,y+3)
                                                              else "NA"})
-#hwy20_SantiamCrash$text<-substring(hwy20_SantiamCrash$text,7,12)
+        hwy20_SantiamCrash$text<-substring(hwy20_SantiamCrash$text,7,12)
         
+        direction<-as.character(direction)
 
-        dim(hwy20_SantiamCrash)
+        hwy20_SantiamCrash$created<-as.Date(hwy20_SantiamCrash$created)
+
+        plotdata<-cbind(hwy20_SantiamCrash$created, distance, direction )       
+
+##date in cbind is not working
+        plotdata[,1]<-as.Date(plotdata[,1])
+        dim(plotdata)
+        head(plotdata)
+
 
 
 
