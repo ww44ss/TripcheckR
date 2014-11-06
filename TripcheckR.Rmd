@@ -43,10 +43,15 @@ hwy20_SantiamCrash<-hwy20_SantiamCrash[!duplicated(hwy20_SantiamCrash$created),]
 ## get some details on the crash from teh text string
         ##this usually will have a mile number
         
-        midist<-lapply(hwy20_SantiamCrash$text, function(x) {y<- gregexpr("Mi", x)
-                                                             print(y[1])})
+        midist<-lapply(hwy20_SantiamCrash$text, function(x) {y<- regexpr("Mi", x)
+                                                             if (y >4) substring(x,y-3,y-1)
+                                                             else "NA"})
                                                             # if (y != FALSE) substring(x, y-3, y-1)})
         
+
+        dir<-lapply(hwy20_SantiamCrash$text, function(x) {y<- regexpr("Mi", x)
+                                                             if (y >4) substring(x,y+2,y+3)
+                                                             else "NA"})
 #hwy20_SantiamCrash$text<-substring(hwy20_SantiamCrash$text,7,12)
         
 
