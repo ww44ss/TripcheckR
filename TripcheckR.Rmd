@@ -12,6 +12,7 @@ output: html_document
 
 ## Get the relevnat tweet data
 
+        if (getwd()=="/Users/winstonsaunders/Documents") {setwd("TripcheckR")}
         file_name <- "TripCheckUS20B"
 
         hwy20Bfull<-read.csv(paste0(file_name, ".csv"))
@@ -29,54 +30,59 @@ The data pulled is from `r hwy_df$created[1]` to `r hwy_df$created[length(hwy_df
 ```{r "clean"}
 
 dim(hwy_df)
-##Get tweets with Santiam Pass
-hwy20_Santiam <-hwy_df[grep("Santiam Pass Summit", hwy_df$text),]
 
-hwy20_SantiamCrash <-hwy20_Santiam[grep("crash", hwy20_Santiam$text),]
+        ##Define Search Patterns
+        S1 <- "Santiam Pass Summit"
+        ##Get tweets with S1
+        hwy_df <-hwy_df[grep(S1, hwy_df$text),]
+        
+        S2 <- "crash"
+        ## get tweets with S2
+        hwy_df <-hwy_df[grep(S2, hyw_df$text),]
 
 ##dedup the data
 
-hwy20_SantiamCrash<-hwy20_SantiamCrash[!duplicated(hwy20_SantiamCrash$created),]
+hwy_df<-hwy_df[!duplicated(hwy_df$created),]
 
 
 
 ## get some details on the crash from teh text string
         ##this usually will have a mile number
         
-        midist<-lapply(hwy20_SantiamCrash$text, function(x) {y<- regexpr("Mi", x)
+        midist<-lapply(hwy_df$text, function(x) {y<- regexpr("Mi", x)
                                                              if (y >4) substring(x,y-3,y-1)
                                                              else "NA"})
                                                             # if (y != FALSE) substring(x, y-3, y-1)})
         
         distance<-as.numeric(midist)
 
-        direction<-lapply(hwy20_SantiamCrash$text, function(x) {y<- regexpr("Mi", x)
+        direction<-lapply(hwy_df$text, function(x) {y<- regexpr("Mi", x)
                                                              if (y >4) substring(x,y+2,y+3)
                                                              else "NA"})
-        hwy20_SantiamCrash$text<-substring(hwy20_SantiamCrash$text,7,12)
+        hwy_df$text<-substring(hwy_df$text,7,12)
         
         direction<-as.character(direction)
 
-        hwy20_SantiamCrash$created<-as.Date(hwy20_SantiamCrash$created)
+        hwy_df$created<-as.Date(hwy_df$created)
 
-        plotdata<-cbind(hwy20_SantiamCrash$created, distance, direction )       
-
-##date in cbind is not working
-        plotdata[,1]<-as.Date(plotdata[,1])
-        dim(plotdata)
-        head(plotdata)
-
-
+        ##bind new columns
+        plotdata<-cbind(hwy_df, distance, direction )    
+        ##reduce dimensions
+        plotdata<-plotdata[,c(6,18,19)]
+        ##filter for complete cases
+        plotdata<-plotdata[complete.cases(plotdata), ]
 
 
 ```
 
+You have `r dim(plotdata)[1]` complete cases meeting the search criteria 
+
 ```{r "plot_the_data"}
 
 
-##timeline(hwy20_SantiamCrash)
+##timeline(plotdata)
 
-rangeYM<- c(hwy20_SantiamCrash$created[length(hwy20_SantiamCrash$created)], hwy20_SantiamCrash$created[1])
+rangeYM<- c(plotdata$created[length(plotdata$created)], plotdata$created[1])
 ```
 
 ```{r}
@@ -85,12 +91,12 @@ rangeYM
 plot(NA,ylim=c(-1,1),xlim=rangeYM,ann=FALSE,axes=FALSE)
 abline(h=0,lwd=2,col="#5B7FA3")
 
-ypts <- rep_len(c(-1,1), length.out=nrow(hwy20_SantiamCrash))
-y0pts = rep_len(0, length.out=nrow(hwy20_SantiamCrash))
-txtpts <- rep_len(c(1,3), length.out=nrow(hwy20_SantiamCrash))
-ylblpts <- rep_len(c(-.9,.9, -.7, .7, -.5, .5), length.out=nrow(hwy20_SantiamCrash))
-lblpts <- rep_len(c(3,1), length.out=nrow(hwy20_SantiamCrash))
-segments(as.Date(hwy20_SantiamCrash$created),y0pts,as.Date(hwy20_SantiamCrash$created),1,col="gray80")
+ypts <- rep_len(c(-1,1), length.out=nrow(plotdata))
+y0pts = rep_len(0, length.out=nrow(plotdata))
+txtpts <- rep_len(c(1,3), length.out=nrow(plotdata))
+ylblpts <- rep_len(c(-.9,.9, -.7, .7, -.5, .5), length.out=nrow(plotdata))
+lblpts <- rep_len(c(3,1), length.out=nrow(plotdata))
+segments(as.Date(plotdata$created),y0pts,as.Date(plotdata$created),1,col="gray80")
 
 axis.Date(
  1,
@@ -104,11 +110,11 @@ axis.Date(
  font=2
 )
 
-points(hwy20_SantiamCrash$created,y=ypts, pch="-", cex=1.5, col="#5B7FA3")
+points(plotdata$created,y=ypts, pch="-", cex=1.5, col="#5B7FA3")
 par(xpd=NA)
 text(
-  hwy20_SantiamCrash$created, y=ylblpts,
-  labels=hwy20_SantiamCrash$text, cex=0.5, pos=lblpts, srt=90
+  plotdata$created, y=ylblpts,
+  labels=plotdata$text, cex=0.5, pos=lblpts, srt=90
 )
 par(xpd=FALSE)
 
