@@ -1,0 +1,170 @@
+---
+title: "Engle Road - Road data from Twitter"
+author: "Winston Saunders"
+date: "November 8, 2014"
+output: html_document
+---
+
+###Crash data anlaysis TripCheck Twitter Feed
+
+
+
+```{r "get_tweets", echo=FALSE, warning=FALSE}
+
+##This program assumes you have already run the TwitterReader.R to download a feed timeline. 
+##It reads the data in teh form of a .csv 
+
+## Get the relevnat tweet data
+
+        if (getwd()=="/Users/winstonsaunders/Documents") {setwd("TripcheckR")}
+        file_name <- "TripCheckUS20B"
+
+        hwy_df<-read.csv(paste0(file_name, ".csv"))
+
+        ##make the date column a date
+        hwy_df$created<-as.Date(hwy_df$created)
+
+
+```
+
+The data pulled is from `r hwy_df$created[length(hwy_df$created)]` to `r hwy_df$created[1]`. There are `r dim(hwy_df)[1]` raw data points. 
+
+
+```{r "clean", echo=FALSE, warning=FALSE}
+
+        ##Define Search Patterns
+        location <- "@ Engle Road"
+        ##Get tweets with S1
+        hwy_df <-hwy_df[grep(location, hwy_df$text),]
+        
+        incident <- "crash"
+        ## get tweets with S2
+        hwy_df <-hwy_df[grep(incident, hwy_df$text),]
+
+##dedup the data
+
+hwy_df<-hwy_df[!duplicated(hwy_df$created),]
+
+        ##analyze the data
+
+        ## get some details on the crash from the text string
+        ##Find "Mi" maker and then extract miles number
+        
+        midist<-lapply(hwy_df$text, function(x) {y<- regexpr("Mi", x)
+                                                             if (y >4) substring(x,y-3,y-1)
+                                                             else "NA"})
+                                                            # if (y != FALSE) substring(x, y-3, y-1)})
+        
+        distance<-as.numeric(midist)
+
+        direction<-lapply(hwy_df$text, function(x) {y<- regexpr("Mi", x)
+                                                             if (y >4) substring(x,y+2,y+3)
+                                                             else "NA"})
+        hwy_df$text<-substring(hwy_df$text,7,12)
+        
+        direction<-as.character(direction)
+
+        ##bind new columns to data frame
+        plotdata<-cbind(hwy_df, distance, direction )    
+
+        ##reduce dimensions
+        plotdata<-plotdata[,c(6,18,19)]
+
+        ##filter for complete cases
+        plotdata<-plotdata[complete.cases(plotdata), ]
+
+        ##define function to strip spaces
+        trim.leading <- function (x)  sub("^\\s+", "", x)
+
+        plotdata$direction <- trim.leading(as.character(plotdata$direction))
+
+        #Sign the distance based on direction
+
+        for(i in 1:nrow(plotdata)) {if(plotdata$direction[i] =="E" | plotdata$direction[i] =="S") plotdata$distance[i] <- -1*plotdata$distance[i]}
+                
+                
+
+##data are processed and ready to plot
+
+```
+
+
+Filtering on the crtieria: "`r location`"  and "`r incident`"  
+Taking complete cases reduces the number of data points to `r dim(plotdata)[1]`.
+
+```{r "plot_the_data", echo=FALSE, fig.align='center', fig.width=8, fig.height=4}
+
+
+##timeline(plotdata)
+
+        rangeYM<- c(plotdata$created[dim(plotdata)[1]], plotdata$created[1])
+
+        ##index graph to start on first of month
+        # first decompose into components
+        d<-as.POSIXlt(rangeYM[1])
+        e<-unclass(d)
+        # Then subract appropriate number of days 
+        rangeYM[1]<-rangeYM[1]-e$mday+1
+
+```
+
+The data cover a date range from `r rangeYM[1]` to `r rangeYM[2]` and there were `r 7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))` accidents per week.  
+
+Since the distance over which the accidents occured is `r max(plotdata$distance)-min(plotdata$distance)` miles, the accident density is `r 52*7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))/(max(plotdata$distance)-min(plotdata$distance))` accident/year/mile. 
+
+###Timline of accidents
+
+The graph below shows a timline of accidents, with the location of the accident (measured in distance from the summit) represented by the y-axis. The positive direction is West.
+
+
+```{r, echo=FALSE, fig.align='center'}
+
+plot(NA,ylim=c(-10,10),xlim=rangeYM,ann=FALSE,axes=FALSE)
+abline(h=0,lwd=2,col="dodgerblue4")
+
+ypts <- plotdata$distance
+
+
+
+y0pts = rep_len(0, length.out=nrow(plotdata))
+txtpts <- rep_len(c(1,3), length.out=nrow(plotdata))
+ylblpts <- ypts
+lblpts <- rep_len(c(3,1), length.out=nrow(plotdata))
+segments(as.Date(plotdata$created),y0pts,as.Date(plotdata$created),ypts,col="gray80")
+
+axis.Date(
+ 1,
+ at=seq.Date(rangeYM[1],rangeYM[2],by="month"),
+ format="%Y-%m",
+ cex.axis=0.6,
+ pos=0,
+ lwd=0,
+ lwd.tick=2,
+ col="dodgerblue3",
+ font=1
+)
+
+points(plotdata$created,y=ypts, pch=20, cex=1.5, col="violetred2")
+
+title(main=file_name, ylab="miles")
+
+
+
+```
+
+
+
+###Histogram of accident locations
+
+This plot shows the distribution of accidents as measured by the distance from the point of reference `r location`. While the number of accidents on the West side outweigh those on the wast, there appears to be a strong bias to the distribution.  
+
+
+```{r, echo=FALSE, fig.align='center'}
+
+
+hist(plotdata$distance, main=file_name,xlab="distance (E-W)", col = "deepskyblue2", xlim=c(-10,10), breaks=10)
+```
+
+###Conclusion
+
+This is a first analysis of this data. Will compare it to other road segments.
