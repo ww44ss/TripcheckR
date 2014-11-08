@@ -7,10 +7,12 @@ output: html_document
 
 ###Crash data analysis based on the TripCheck Twitter Feed
 
-This analysis is based on data pulled from the Oregon Dept of Transportation (ODOT) TripCheck feed on twitter. It uses a separate program to download the data from the feed (TwitterReader) available in my github repository, which stores the feed data in a local .csv file.
+This analysis is based on data from the Oregon Dept of Transportation (ODOT) TripCheck feed on twitter. The feed tracks road conditions and could be useful for correlating events.   
+
+It uses a separate program to download the data from the feed (TwitterReader) available in my github repository, which stores the feed data in a local .csv file.
 
 
-It plots a timeline of specific events and does a histogram and density anlaysis. 
+Current analysis is plots of a timeline of specific events and a histogram and density anlaysis. 
 
 ```{r "get_tweets", echo=FALSE, warning=FALSE}
 
