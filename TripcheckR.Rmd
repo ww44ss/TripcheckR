@@ -32,28 +32,44 @@ The data pulled is from `r hwy_df$created[length(hwy_df$created)]` to `r hwy_df$
 
 ```{r "clean", echo=FALSE, warning=FALSE}
 
+
+        ##add meta table for correlation
+        ## need to be insterted first
+        metaincident <- "snow"
+        ## get tweets with S2
+        hwy_df2 <-hwy_df[grep(metaincident, hwy_df$text),]
+
+
         ##Define Search Patterns
         location <- "Santiam Pass Summit"
         ##Get tweets with S1
         hwy_df <-hwy_df[grep(location, hwy_df$text),]
         
+
+
+        
         incident <- "crash"
         ## get tweets with S2
         hwy_df <-hwy_df[grep(incident, hwy_df$text),]
+        
+        
+
+        
 
 ##dedup the data
 
-hwy_df<-hwy_df[!duplicated(hwy_df$created),]
+        hwy_df<-hwy_df[!duplicated(hwy_df$created),]
+        hwy_df2<-hwy_df2[!duplicated(hwy_df2$created),]
 
-        ##analyze the data
+##analyze the hwy_df data
 
-        ## get some details on the crash from the text string
+        ## get details on the crash from the text string
+
         ##Find "Mi" maker and then extract miles number
         
         midist<-lapply(hwy_df$text, function(x) {y<- regexpr("Mi", x)
                                                              if (y >4) substring(x,y-3,y-1)
                                                              else "NA"})
-                                                            # if (y != FALSE) substring(x, y-3, y-1)})
         
         distance<-as.numeric(midist)
 
@@ -67,7 +83,7 @@ hwy_df<-hwy_df[!duplicated(hwy_df$created),]
         ##bind new columns to data frame
         plotdata<-cbind(hwy_df, distance, direction )    
 
-        ##reduce dimensions
+        ##reduce dimensions, keeping date, distance, and direction
         plotdata<-plotdata[,c(6,18,19)]
 
         ##filter for complete cases
@@ -82,18 +98,24 @@ hwy_df<-hwy_df[!duplicated(hwy_df$created),]
 
         for(i in 1:nrow(plotdata)) {if(plotdata$direction[i] =="E" | plotdata$direction[i] =="S") plotdata$distance[i] <- -1*plotdata$distance[i]}
                 
-                
+           
+## plot data 2
+
+        plotdata2<-hwy_df2$created          ##keep only data column
 
 ##data are processed and ready to plot
 
 ```
 
 
-Filtering on the crtieria: "`r location`"  and "`r incident`"  
-Taking complete cases reduces the number of data points to `r dim(plotdata)[1]`.
+Filtering on the crtieria: _`r location`_  and _`r incident`_ 
+Taking complete cases reduces the number of data points to `r dim(plotdata)[1]`.   
+
+The analysis also looks at meta incidents, in this case there were _`r length(plotdata2)`_ days with _`r metaincident`_. These data points are plotted along with the crash data.
 
 ```{r "plot_the_data", echo=FALSE, fig.align='center', fig.width=8, fig.height=4}
 
+##this section takes care of a formatting function to ensure the graph range starts on the first of a calendar month
 
 ##timeline(plotdata)
 
@@ -114,7 +136,10 @@ Since the distance over which the accidents occured is `r max(plotdata$distance)
 
 ###Timline of accidents
 
-The graph below shows a timline of accidents, with the location of the accident (measured in distance from the summit) represented by the y-axis. The positive direction is West.
+The graph below shows a timline of accidents, with the location of the accident (measured in distance from the summit) represented by the y-axis. The positive direction is West.  
+  
+
+Blue data points represent days when `r metaincident` was reported in the feed.
 
 
 ```{r, echo=FALSE, fig.align='center'}
@@ -124,9 +149,11 @@ abline(h=0,lwd=2,col="dodgerblue4")
 
 ypts <- plotdata$distance
 
+y0pts2 <- rep_len(0, length.out=length(plotdata2))
 
 
-y0pts = rep_len(0, length.out=nrow(plotdata))
+
+y0pts <- rep_len(0, length.out=nrow(plotdata))
 txtpts <- rep_len(c(1,3), length.out=nrow(plotdata))
 ylblpts <- ypts
 lblpts <- rep_len(c(3,1), length.out=nrow(plotdata))
@@ -145,6 +172,7 @@ axis.Date(
 )
 
 points(plotdata$created,y=ypts, pch=20, cex=1.5, col="violetred2")
+points(plotdata2, y = y0pts2, pch=19, cex=1, col="blue")
 
 title(main=file_name, ylab="miles")
 
