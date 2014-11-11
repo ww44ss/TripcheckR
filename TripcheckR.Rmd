@@ -142,7 +142,7 @@ The graph below shows a timline of accidents, with the location of the accident 
 Blue data points represent days when `r metaincident` was reported in the feed.
 
 
-```{r, echo=FALSE, fig.align='center'}
+```{r, echo=FALSE, fig.align='center', fig.width=9  }
 
 plot(NA,ylim=c(-10,10),xlim=rangeYM,ann=FALSE,axes=FALSE)
 abline(h=0,lwd=2,col="dodgerblue4")
