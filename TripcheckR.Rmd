@@ -145,7 +145,13 @@ Blue data points represent days when `r metaincident` was reported in the feed.
 ```{r, echo=FALSE, fig.align='center', fig.width=9  }
 
 plot(NA,ylim=c(-10,10),xlim=rangeYM,ann=FALSE,axes=FALSE)
-abline(h=0,lwd=2,col="dodgerblue4")
+abline(h=0,lwd=3,col="cornsilk4")
+abline(h=2, lwd=1, col="cornsilk2")
+abline(h=-2, lwd=1, col="cornsilk2")
+abline(h=4, lwd=1, col="cornsilk2")
+abline(h=-4, lwd=1, col="cornsilk2")
+abline(h=6, lwd=1, col="cornsilk2")
+abline(h=8, lwd=1, col="cornsilk2")
 
 ypts <- plotdata$distance
 
@@ -174,7 +180,7 @@ axis.Date(
 points(plotdata$created,y=ypts, pch=20, cex=1.5, col="violetred2")
 points(plotdata2, y = y0pts2, pch=19, cex=1, col="blue")
 
-title(main=file_name, ylab="miles")
+title(main=paste(file_name, "accident data"), ylab="miles", xlab="data (yyyy-mm)")
 
 
 
@@ -182,9 +188,9 @@ title(main=file_name, ylab="miles")
 
 
 
-###Histogram of accident locations
+###Histogram of distance from `r location`
 
-This plot shows the distribution of accidents as measured by the distance from the point of reference `r location`. While the number of accidents on the West side outweigh those on the wast, there appears to be a strong bias to the distribution.  
+This plot shows the distribution of accidents as measured by the distance from `r location`. In this specific case, while the number of accidents on the West side outweigh those on the East, there appears to be a strong bias to the distribution if one takes the mode as the center of the distribution.
 
 
 ```{r, echo=FALSE, fig.align='center'}
@@ -192,6 +198,11 @@ This plot shows the distribution of accidents as measured by the distance from t
 
 hist(plotdata$distance, main=file_name,xlab="distance (E-W)", col = "deepskyblue2", xlim=c(-10,10), breaks=10)
 ```
+
+
+###Probabilities
+
+
 
 ###Conclusion
 
