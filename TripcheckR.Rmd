@@ -163,7 +163,7 @@ y0pts <- rep_len(0, length.out=nrow(plotdata))
 txtpts <- rep_len(c(1,3), length.out=nrow(plotdata))
 ylblpts <- ypts
 lblpts <- rep_len(c(3,1), length.out=nrow(plotdata))
-segments(as.Date(plotdata$created),y0pts,as.Date(plotdata$created),ypts,col="gray80")
+segments(as.Date(plotdata$created),y0pts,as.Date(plotdata$created),ypts,col="cornsilk3")
 
 axis.Date(
  1,
@@ -173,14 +173,14 @@ axis.Date(
  pos=0,
  lwd=0,
  lwd.tick=2,
- col="dodgerblue3",
+ col="cornsilk4",
  font=1
 )
 
 points(plotdata$created,y=ypts, pch=20, cex=1.5, col="violetred2")
 points(plotdata2, y = y0pts2, pch=19, cex=1, col="blue")
 
-title(main=paste(file_name, "accident data"), ylab="miles", xlab="data (yyyy-mm)")
+title(main=paste(location, file_name, "data"), ylab="miles", xlab="data (yyyy-mm)")
 
 
 
@@ -199,6 +199,8 @@ This plot shows the distribution of accidents as measured by the distance from `
 hist(plotdata$distance, main=file_name,xlab="distance (E-W)", col = "deepskyblue2", xlim=c(-10,10), breaks=10)
 ```
 
+
+The mean distance of accidents is `r mean(plotdata$distance)` with a standard deviation of `r sd(plotdata$distance)`.
 
 ###Probabilities
 
