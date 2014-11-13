@@ -1,11 +1,17 @@
 ---
-title: "TripCheckR - Road data from Twitter"
+title: "TripCheckR - Automobile Accident Probabilities and Prediction from Twitter"
 author: "Winston Saunders"
 date: "October 26, 2014"
 output: html_document
 ---
 
-###Crash data anlaysis TripCheck Twitter Feed
+###Summary
+
+This analysis uses data from the [Oregon Dept of Transportation](https://tripcheck.com/Pages/Twitter.asp) Tripcheck twitter feeds. 
+
+The analysis focuses on a specific location, US Highway 20, over Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range. As the main route from Bend, Oregon to the Willamette Valley cities of Portland, Eugene, and Salem, it has high traffic year round and is the site of [frequent accidents](http://www.nuggetnews.com/archives/960717/front1.shtml)
+
+This analysis focuses on the correlation of snow and ice to traffic accidents on the pass. Using Bayesian analysis, we examine the question, given an accident occurs, what is the probability snow conditions existed. 
 
 
 
@@ -130,9 +136,7 @@ The analysis also looks at meta incidents, in this case there were _`r length(pl
 
 ```
 
-The data cover a date range from `r rangeYM[1]` to `r rangeYM[2]` and there were `r 7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))` accidents per week.  
-
-Since the distance over which the accidents occured is `r max(plotdata$distance)-min(plotdata$distance)` miles, the accident density is `r 52*7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))/(max(plotdata$distance)-min(plotdata$distance))` accident/year/mile. 
+There were `r 7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))` accidents per week. Since the distance over which the accidents occured is `r max(plotdata$distance)-min(plotdata$distance)` miles, the accident density is `r 52*7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))/(max(plotdata$distance)-min(plotdata$distance))` accident/year/mile. 
 
 ###Timline of accidents
 
@@ -145,6 +149,8 @@ Blue data points represent days when `r metaincident` was reported in the feed.
 ```{r, echo=FALSE, fig.align='center', fig.width=9  }
 
 plot(NA,ylim=c(-10,10),xlim=rangeYM,ann=FALSE,axes=FALSE)
+
+##manually draw axis and gridlines
 abline(h=0,lwd=3,col="cornsilk4")
 abline(h=2, lwd=1, col="cornsilk2")
 abline(h=-2, lwd=1, col="cornsilk2")
@@ -153,8 +159,9 @@ abline(h=-4, lwd=1, col="cornsilk2")
 abline(h=6, lwd=1, col="cornsilk2")
 abline(h=8, lwd=1, col="cornsilk2")
 
+##define ypts as distance from summit
 ypts <- plotdata$distance
-
+##anchor line to x axis
 y0pts2 <- rep_len(0, length.out=length(plotdata2))
 
 
@@ -164,6 +171,15 @@ txtpts <- rep_len(c(1,3), length.out=nrow(plotdata))
 ylblpts <- ypts
 lblpts <- rep_len(c(3,1), length.out=nrow(plotdata))
 segments(as.Date(plotdata$created),y0pts,as.Date(plotdata$created),ypts,col="cornsilk3")
+
+##add y-axis numbers
+text(rangeYM[1]-20, 0, "0")
+text(rangeYM[1]-20, 2, "2")
+text(rangeYM[1]-20, 4, "4")
+text(rangeYM[1]-20, 6, "6")
+text(rangeYM[1]-20, 8, "8")
+text(rangeYM[1]-20, -2, "-2")
+text(rangeYM[1]-20, -4, "-4")
 
 axis.Date(
  1,
