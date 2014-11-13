@@ -195,7 +195,7 @@ axis.Date(
 points(plotdata$created,y=ypts, pch=20, cex=1.5, col="violetred2")
 points(plotdata2, y = y0pts2, pch=19, cex=1, col="blue")
 
-title(main=paste(location, file_name, "data"), ylab="distance(miles)")
+title(main=paste(location, file_name, "data", incident, "and", metaincident), ylab="distance from Summit (miles)")
 
 ##add x-axis text
 text (rangeYM[1]+(rangeYM[2]-rangeYM[1])/2, -6, "date (yyyy-mm)")
