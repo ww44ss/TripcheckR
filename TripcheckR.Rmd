@@ -1,18 +1,17 @@
 ---
-title: "TripCheckR - Automobile Accident Probabilities and Prediction from Twitter"
+title: "Predicting Santiam Pass Accidents from Twitter"
 author: "Winston Saunders"
-date: "October 26, 2014"
+date: "November 2014"
 output: html_document
 ---
 
 ###Summary
 
-This analysis uses data from the [Oregon Dept of Transportation](https://tripcheck.com/Pages/Twitter.asp) Tripcheck twitter feeds. 
+The [Oregon Dept of Transportation](https://tripcheck.com/Pages/Twitter.asp) regularly publishes, as a public service, live road reports via Twitter. Using this data we can recontruct both the times and locations of accidents on sections of road and also correlate them with road conditions.  
 
-The analysis focuses on a specific location, US Highway 20, over Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range. As the main route from Bend, Oregon to the Willamette Valley cities of Portland, Eugene, and Salem, it has high traffic year round and is the site of [frequent accidents](http://www.nuggetnews.com/archives/960717/front1.shtml)
+The analysis focuses on a specific location, US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79). As the main route from Bend, Oregon to the Willamette Valley cities of Portland, Eugene, and Salem, it has high traffic year round and is the site of [frequent](http://www.nuggetnews.com/archives/960717/front1.shtml) accidents.
 
-This analysis focuses on the correlation of snow and ice to traffic accidents on the pass. Using Bayesian analysis, we examine the question, given an accident occurs, what is the probability snow conditions existed. 
-
+This analysis establishes the accident frequency and density for a 11 mile stretch of road to be correlation of snow and ice to traffic accidents on the pass. I show there is a high rate of accidents on the Pass (about one every two weeks). I use Bayesian analysis to show a high correlation to snowy road conditions. 
 
 
 ```{r "get_tweets", echo=FALSE, warning=FALSE}
@@ -30,10 +29,15 @@ This analysis focuses on the correlation of snow and ice to traffic accidents on
         ##make the date column a date
         hwy_df$created<-as.Date(hwy_df$created)
 
+        ### define start adn edn times of period 
+        tEnd <- hwy_df$created[length(hwy_df$created)]
+        tStart <- hwy_df$created[1]
+        
+
 
 ```
 
-The data pulled is from `r hwy_df$created[length(hwy_df$created)]` to `r hwy_df$created[1]`. There are `r dim(hwy_df)[1]` raw data points. 
+The data analyzed cover the dates from `r tEnd` to `r tStart`. There are `r dim(hwy_df)[1]` tweets during this period. 
 
 
 ```{r "clean", echo=FALSE, warning=FALSE}
@@ -111,13 +115,14 @@ The data pulled is from `r hwy_df$created[length(hwy_df$created)]` to `r hwy_df$
 
 ##data are processed and ready to plot
 
+        ##define a couple of variables for later use
+        nAcc <- dim(plotdata)[1]
+        nSnow <- length(plotdata2)
+
 ```
 
 
-Filtering on the crtieria: _`r location`_  and _`r incident`_ 
-Taking complete cases reduces the number of data points to `r dim(plotdata)[1]`.   
-
-The analysis also looks at meta incidents, in this case there were _`r length(plotdata2)`_ days with _`r metaincident`_. These data points are plotted along with the crash data.
+Filtering on the crtieria: _`r location`_  and _`r incident`_  and taking complete cases reduces the number of '`r incident` data points to `r nAcc`.   During the same period there were _`r nSnow`_ days with _`r metaincident`_. 
 
 ```{r "plot_the_data", echo=FALSE, fig.align='center', fig.width=8, fig.height=4}
 
@@ -136,14 +141,13 @@ The analysis also looks at meta incidents, in this case there were _`r length(pl
 
 ```
 
+####summary statistics
+
 There were `r 7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))` accidents per week. Since the distance over which the accidents occured is `r max(plotdata$distance)-min(plotdata$distance)` miles, the accident density is `r 52*7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))/(max(plotdata$distance)-min(plotdata$distance))` accident/year/mile. 
 
-###Timline of accidents
+###Timeline of accidents
 
-The graph below shows a timline of accidents, with the location of the accident (measured in distance from the summit) represented by the y-axis. The positive direction is West.  
-  
-
-Blue data points represent days when `r metaincident` was reported in the feed.
+The graph below shows a timeline of accidents, with the location of the accident (measured in distance from the summit) represented by the y-axis. Red data points represent `r incident` data, while blue data points represent days when `r metaincident` was reported in the feed.
 
 
 ```{r, echo=FALSE, fig.align='center', fig.width=9  }
@@ -151,7 +155,7 @@ Blue data points represent days when `r metaincident` was reported in the feed.
 plot(NA,ylim=c(-10,10),xlim=rangeYM,ann=FALSE,axes=FALSE)
 
 ##manually draw axis and gridlines
-abline(h=0,lwd=3,col="cornsilk4")
+abline(h=0,lwd=2,col="cornsilk4")
 abline(h=2, lwd=1, col="cornsilk2")
 abline(h=-2, lwd=1, col="cornsilk2")
 abline(h=4, lwd=1, col="cornsilk2")
@@ -173,13 +177,8 @@ lblpts <- rep_len(c(3,1), length.out=nrow(plotdata))
 segments(as.Date(plotdata$created),y0pts,as.Date(plotdata$created),ypts,col="cornsilk3")
 
 ##add y-axis numbers
-text(rangeYM[1]-20, 0, "0")
-text(rangeYM[1]-20, 2, "2")
-text(rangeYM[1]-20, 4, "4")
-text(rangeYM[1]-20, 6, "6")
-text(rangeYM[1]-20, 8, "8")
-text(rangeYM[1]-20, -2, "-2")
-text(rangeYM[1]-20, -4, "-4")
+
+axis(side=2, at=c(-4,-2,0,2,4,6,8), labels = c("-4 E", "-2 E", "0", "2 W", "4 W", "6 W", "8 W"), las=2, col="cornsilk4", lwd=2)
 
 axis.Date(
  1,
@@ -196,7 +195,10 @@ axis.Date(
 points(plotdata$created,y=ypts, pch=20, cex=1.5, col="violetred2")
 points(plotdata2, y = y0pts2, pch=19, cex=1, col="blue")
 
-title(main=paste(location, file_name, "data"), ylab="miles", xlab="data (yyyy-mm)")
+title(main=paste(location, file_name, "data"), ylab="distance(miles)")
+
+##add x-axis text
+text (rangeYM[1]+(rangeYM[2]-rangeYM[1])/2, -6, "date (yyyy-mm)")
 
 
 
@@ -216,10 +218,20 @@ hist(plotdata$distance, main=file_name,xlab="distance (E-W)", col = "deepskyblue
 ```
 
 
-The mean distance of accidents is `r mean(plotdata$distance)` with a standard deviation of `r sd(plotdata$distance)`.
+The median distance of accidents is `r median(plotdata$distance)` Miles West of the Summit with a standard deviation of `r sd(plotdata$distance)` about the mean `r mean(plotdata$distance)`. The data show a skewed distribution. 
 
 ###Probabilities
 
+```{r, echo=FALSE}
+
+tTotal <- as.numeric(tStart)-as.numeric(tEnd)
+
+AccRate <- nAcc/tTotal
+SnowRate<- nSnow/tTotal
+
+```
+
+We can calculate rough probabilities by noting that there were `r AccRate` crashes per day and the probability of snow was `r SnowRate` during the same period.
 
 
 ###Conclusion
