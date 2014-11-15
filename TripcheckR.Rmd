@@ -1,5 +1,5 @@
 ---
-title: "Predicting Santiam Pass Accidents using Twitter"
+title: "Predicting Santiam Pass Safety using Twitter"
 author: "Winston Saunders"
 date: "November 2014"
 output: html_document
@@ -7,9 +7,9 @@ output: html_document
 
 ###Summary
 
-The [Oregon Dept of Transportation](https://tripcheck.com/Pages/Twitter.asp) regularly publishes, as a public service, live road reports via Twitter. The record created by these tweets can be used to recontruct both the times and locations of accidents on sections of road and also to correlate them with road conditions.  
+The [Oregon Dept of Transportation](https://tripcheck.com/Pages/Twitter.asp) regularly publishes, as a public service, live road reports via Twitter. The record created by these tweets can be used to recontruct the times and locations of accidents on sections of road and also to correlate them with road conditions.  
 
-This analysis is useful to drivers who intend to cross the pass since at least in a few incidents otherwise innocent drivers become entangled in accidents caused by other drivers who lose control of their cars. Avoiding times when these accidents are most frequent can increase safety.
+This analysis is useful to drivers since otherwise innocent drivers become entangled in accidents caused by other drivers. Avoiding times when these accidents are most frequent can increase safety.
 
 The analysis focuses on a specific location, US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79). As the main route from Bend, Oregon to the Willamette Valley cities of Portland, Eugene, and Salem, it has high traffic year round and is the site of [frequent](http://www.nuggetnews.com/archives/960717/front1.shtml) accidents. The specfici road condition analyzed is snow covered road surface. 
 
@@ -202,7 +202,7 @@ points(plotdata2, y = y0pts2, pch=19, cex=1, col="blue")
 title(main=paste(location, file_name, "data", incident, "and", metaincident), ylab="distance from Summit (miles)")
 
 ##add x-axis text
-text (rangeYM[1]+(rangeYM[2]-rangeYM[1])/2, -6, "date (yyyy-mm)")
+text (rangeYM[1]+(rangeYM[2]-rangeYM[1])/2, -10, "date (yyyy-mm)")
 
 
 
@@ -210,48 +210,55 @@ text (rangeYM[1]+(rangeYM[2]-rangeYM[1])/2, -6, "date (yyyy-mm)")
 
 ###When do accidents occur?
 
-We can also look at the correlation of accidents to the Day of Week. 
+We can also look at the correlation of accidents to the Day of Week. This correlation might be expected because traffic patterns change between weekdays and weekends.
 
-```{r}
+```{r, echo=FALSE, fig.align='center', fig.height=3, fig.width=5}
+
+##convert dates to weekedays using R utility
 crashdays <- weekdays(as.Date(plotdata$created,'%Y-%m-%d'))
 snowdays <- weekdays(as.Date(plotdata2,'%Y-%m-%d'))
 
-str(crashdays)
-str(snowdays)
-
+##convert tables
 cdt<-table(crashdays)
 sdt<-table(snowdays)
 
-cdt
 
-str(cdt)
+cdt<-as.data.frame(cdt)
+sdt<-as.data.frame(sdt)
 
-cdt<-as.factor(cdt)
+cdt$crashdays<-factor(cdt$crashdays, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+sdt$snowdays<-factor(sdt$snowdays, levels = c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+
+library(ggplot2)
+
+pp<-ggplot(data=cdt, aes(x=crashdays, y=Freq)) + geom_bar(colour="black",fill = "cornsilk4", stat="identity")
+pp<-pp+ggtitle("Number of Crashes by Weekday")
+pp<-pp+labs(x="Weekday", y="Number", title="Number of Crashes by Weekday")
+
+pp
+
+#ggplot(data=sdt, aes(x=snowdays, y=Freq)) + geom_bar(fill = "cornsilk4", stat="identity")
+
+cdmean<-mean(cdt$Freq)
+cdsd<-sd(cdt$Freq)
+
+cdminzstat<-(min(cdt$Freq)- cdmean)/cdsd
+cdmaxzstat<-(max(cdt$Freq)- cdmean)/cdsd
 
 
-cdt
+sdmean<-mean(sdt$Freq)
+sdsd<-sd(sdt$Freq)
 
-str(cdt)
-
-cdt<- factor(cdt, levels= c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
-
-cdt
-
-
-str(cdt)
-
-levels(cdt) <- c("Sunday", "Monday", 
-    "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
-
-
-cdt 
-
-plot(cdt)
-
+sdminzstat<-(min(sdt$Freq)- sdmean)/sdsd
+sdmaxzstat<-(max(sdt$Freq)- sdmean)/sdsd
 
 ```
 
+The above histrogram shows substantial variation depending on the day of the week. Friday, in this anlaysis has almost four times the number of accidents than Wednesday. The mean number of accidents per weekday is `r cdmean` and the standard deviation is `r cdsd`. The z-stat for the min is `r cdminzstat` and the max is `r cdmaxzstat`.
 
+Parentetically, the number of snow days show no significant correlation to the weekday. This is what you'd expect, but it's a good check of the data. The mean number of snow days per weekday is `r sdmean`. For reference the z statistic for the min is `r sdminzstat` and the max is `r sdmaxzstat`.
+
+Hence, the day of the week plays as substantial role in the number of accidents.
 
 
 ###Where do accidents occur?
@@ -259,7 +266,7 @@ plot(cdt)
 This plot shows the distribution of accidents as measured by the distance from `r location`. In this specific case, while the number of accidents on the West side outweigh those on the East, there appears to be a strong bias to the distribution if one takes the mode as the center of the distribution.
 
 
-```{r, echo=FALSE, fig.align='center'}
+```{r, echo=FALSE, fig.align='center', fig.height=3, fig.width=4}
 
 
 hist(plotdata$distance, main=file_name,xlab="distance (E-W)", col = "deepskyblue2", xlim=c(-10,10), breaks=10)
@@ -293,14 +300,20 @@ nCommRate = nCommon/nSnow
 
 ```
 
-However, with a little number crunching we can show that the probability that there was an accident given there was snow equal to (the number of days when there was snow and an accident) divided by (the number of days when there was snow) is `r nCommRate`. 
-That means that for roughly one in four days there is snow on the pass, there is an accident on this 11 mile stretch of road. 
+With a little number crunching we find the probability that there was an accident given there was snow equal to (the number of days when there was snow and an accident) divided by (the number of days when there was snow) is `r nCommRate`. 
+  
+__That means that for roughly one in four days there is snow on the pass, there is an accident on this 11 mile stretch of road. __
+
+If we looked at specfic weekdays, the rate would be even higher.
 
 
+###Conclusions
 
+Twitter data can be used to evaluate and predict road safety for the benefit of users.
 
+The data here reveal several striking characteristics of this section of road.  
+1. There is a very high accident rate, with `r 7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))` accidents per week.  
+2. Since the distance over which the accidents occured is the relatively short distance (`r max(plotdata$distance)-min(plotdata$distance)` miles), the accident density  `r 52*7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))/(max(plotdata$distance)-min(plotdata$distance))` accident/year/mile is quite high.   
+3. Drivers wanting to avoid accidents on the Pass, judging from the number of accidents, shoudl cross on Tuesday, Wednesday, Thursday, or Sunday. This is especially important if worried about someone crashing into you, since these days provide a factor of protection ranging from three to four.   
+4. Establishing a correlation to the number of snow days, we find that there is an accident on this 11 miles stretch of road every four days there is snow there. 
 
-
-###Conclusion
-
-This is a first analysis of this data. Will compare it to other road segments.
