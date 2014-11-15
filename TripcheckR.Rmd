@@ -1,5 +1,5 @@
 ---
-title: "Predicting Santiam Pass Accidents from Twitter"
+title: "Predicting Santiam Pass Accidents using Twitter"
 author: "Winston Saunders"
 date: "November 2014"
 output: html_document
@@ -7,9 +7,11 @@ output: html_document
 
 ###Summary
 
-The [Oregon Dept of Transportation](https://tripcheck.com/Pages/Twitter.asp) regularly publishes, as a public service, live road reports via Twitter. Using this data we can recontruct both the times and locations of accidents on sections of road and also correlate them with road conditions.  
+The [Oregon Dept of Transportation](https://tripcheck.com/Pages/Twitter.asp) regularly publishes, as a public service, live road reports via Twitter. The record created by these tweets can be used to recontruct both the times and locations of accidents on sections of road and also to correlate them with road conditions.  
 
-The analysis focuses on a specific location, US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79). As the main route from Bend, Oregon to the Willamette Valley cities of Portland, Eugene, and Salem, it has high traffic year round and is the site of [frequent](http://www.nuggetnews.com/archives/960717/front1.shtml) accidents.
+This analysis is useful to drivers who intend to cross the pass since at least in a few incidents otherwise innocent drivers become entangled in accidents caused by other drivers who lose control of their cars. Avoiding times when these accidents are most frequent can increase safety.
+
+The analysis focuses on a specific location, US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79). As the main route from Bend, Oregon to the Willamette Valley cities of Portland, Eugene, and Salem, it has high traffic year round and is the site of [frequent](http://www.nuggetnews.com/archives/960717/front1.shtml) accidents. The specfici road condition analyzed is snow covered road surface. 
 
 This analysis establishes the accident frequency and density for a 11 mile stretch of road to be correlation of snow and ice to traffic accidents on the pass. I show there is a high rate of accidents on the Pass (about one every two weeks). I use Bayesian analysis to show a high correlation to snowy road conditions. 
 
@@ -141,9 +143,11 @@ Filtering on the crtieria: _`r location`_  and _`r incident`_  and taking comple
 
 ```
 
-####summary statistics
+####summary statistics for the raw data
 
-There were `r 7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))` accidents per week. Since the distance over which the accidents occured is `r max(plotdata$distance)-min(plotdata$distance)` miles, the accident density is `r 52*7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))/(max(plotdata$distance)-min(plotdata$distance))` accident/year/mile. 
+There were `r 7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))` accidents per week, meaning there is about one accident every two weeks when averaged over the entire record. Since the distance over which the accidents occured is the relatively short distance of `r max(plotdata$distance)-min(plotdata$distance)` miles, the accident density is `r 52*7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))/(max(plotdata$distance)-min(plotdata$distance))` accident/year/mile. 
+
+During this period there were `r nSnow` days with snow reported on the road. The rest of this analysis will look at how this weather incident affects the accident rate. 
 
 ###Timeline of accidents
 
@@ -204,9 +208,53 @@ text (rangeYM[1]+(rangeYM[2]-rangeYM[1])/2, -6, "date (yyyy-mm)")
 
 ```
 
+###When do accidents occur?
+
+We can also look at the correlation of accidents to the Day of Week. 
+
+```{r}
+crashdays <- weekdays(as.Date(plotdata$created,'%Y-%m-%d'))
+snowdays <- weekdays(as.Date(plotdata2,'%Y-%m-%d'))
+
+str(crashdays)
+str(snowdays)
+
+cdt<-table(crashdays)
+sdt<-table(snowdays)
+
+cdt
+
+str(cdt)
+
+cdt<-as.factor(cdt)
 
 
-###Histogram of distance from `r location`
+cdt
+
+str(cdt)
+
+cdt<- factor(cdt, levels= c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+
+cdt
+
+
+str(cdt)
+
+levels(cdt) <- c("Sunday", "Monday", 
+    "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+
+
+cdt 
+
+plot(cdt)
+
+
+```
+
+
+
+
+###Where do accidents occur?
 
 This plot shows the distribution of accidents as measured by the distance from `r location`. In this specific case, while the number of accidents on the West side outweigh those on the East, there appears to be a strong bias to the distribution if one takes the mode as the center of the distribution.
 
@@ -220,7 +268,7 @@ hist(plotdata$distance, main=file_name,xlab="distance (E-W)", col = "deepskyblue
 
 The median distance of accidents is `r median(plotdata$distance)` Miles West of the Summit with a standard deviation of `r sd(plotdata$distance)` about the mean `r mean(plotdata$distance)`. The data show a skewed distribution. 
 
-###Probabilities
+###How frequent are accidents when there is snow?
 
 ```{r, echo=FALSE}
 
@@ -231,7 +279,26 @@ SnowRate<- nSnow/tTotal
 
 ```
 
-We can calculate rough probabilities by noting that there were `r AccRate` crashes per day and the probability of snow was `r SnowRate` during the same period.
+We can calculate rough estimated of the accident rate `r AccRate` crashes per day and the probability of snow  `r SnowRate` per day during the same period.
+
+```{r, echo=FALSE}
+
+cd <- intersect(as.Date(plotdata$created), as.Date(plotdata2))
+
+
+nCommon = length(cd)
+
+
+nCommRate = nCommon/nSnow
+
+```
+
+However, with a little number crunching we can show that the probability that there was an accident given there was snow equal to (the number of days when there was snow and an accident) divided by (the number of days when there was snow) is `r nCommRate`. 
+That means that for roughly one in four days there is snow on the pass, there is an accident on this 11 mile stretch of road. 
+
+
+
+
 
 
 ###Conclusion
