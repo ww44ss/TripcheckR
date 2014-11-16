@@ -54,6 +54,13 @@ The data analyzed cover the dates from `r tEnd` to `r tStart`. There are `r dim(
 ```{r "clean", echo=FALSE, warning=FALSE}
 
 
+        incident <- "crash"
+        ## get tweets with S2
+        hwy_crash <-hwy_df[grep(incident, hwy_df$text),]
+        hwy_crash<-hwy_crash[!duplicated(hwy_crash$created),]
+
+        TotalCrashes <- dim(hwy_crash)[1]
+
         ##add meta table for correlation
         ## need to be insterted first
         metaincident <- "snow"
@@ -155,6 +162,8 @@ Filtering on the crtieria: _`r location`_  and _`r incident`_  and taking comple
 ####summary statistics for the raw data
 
 Over the period of study there were `r 7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))` accidents per week, meaning there is about one accident every two weeks when averaged over the entire record. Since the distance over which the accidents occured is the relatively short distance of `r max(plotdata$distance)-min(plotdata$distance)` miles, the accident density is `r 52*7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))/(max(plotdata$distance)-min(plotdata$distance))` accident/year/mile. 
+
+This compares to the total number of crashes `r TotalCrashes` reported along the 123 miles of highway covered by the `r file_name` data or `r 52*7 * (TotalCrashes)/as.numeric((rangeYM[2]- rangeYM[1]))/123`  accident/year/mile.
 
 During this period there were `r nSnow` days with snow reported on the road. The rest of this analysis will look at how this weather incident affects the accident rate. 
 
