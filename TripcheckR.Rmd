@@ -11,7 +11,7 @@ output: html_document
 
 The [Oregon Dept of Transportation](https://tripcheck.com/Pages/Twitter.asp) regularly publishes, as a public service, live road reports via Twitter. The record created by these tweets can be used to recontruct the times and locations of accidents on sections of road and also to correlate them with road conditions.  
 
-This benefits drivers since they have no other way to learn about road safety in any quantitative way. This is especially useful to careful or experienced drivers who might become entangled in accidents caused by others. Avoiding times when these accidents are most frequent can increase peronal safety.
+This analysis can be of benefit to drivers. The "average"" citizen has few ways to learn details about road safety in any quantitative way. This is especially useful to careful or experienced drivers who might become entangled in accidents caused by others. Avoiding times when these accidents are most frequent can increase peronal safety.
 
 The analysis focuses on a specific location, US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79) of Oregon. As the main route from the Central Oregon city of Bend to the Willamette Valley cities of Portland, Eugene, and Salem, Highway20 has high traffic year round and is the site of [frequent](http://www.nuggetnews.com/archives/960717/front1.shtml) accidents. 
 
@@ -161,9 +161,9 @@ Filtering on the crtieria: _`r location`_  and _`r incident`_  and taking comple
 
 ####summary statistics for the raw data
 
-Over the period of study there were `r 7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))` accidents per week, meaning there is about one accident every two weeks when averaged over the entire record. Since the distance over which the accidents occured is the relatively short distance of `r max(plotdata$distance)-min(plotdata$distance)` miles, the accident density is `r 52*7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))/(max(plotdata$distance)-min(plotdata$distance))` accident/year/mile. This compares to the total number of crashes `r TotalCrashes` reported along the 123 miles of highway covered by the `r file_name` data or `r 52*7 * (TotalCrashes)/as.numeric((rangeYM[2]- rangeYM[1]))/123`  accident/year/mile. Removing the Santiam Pass data the accident rate drops to `r 52*7 * (TotalCrashes-nrow(plotdata))/as.numeric((rangeYM[2]- rangeYM[1]))/(123-11)` over `r 123-11` miles.
+Over the period of study there were `r 7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))` accidents per week, meaning there is about one accident every two weeks when averaged over the entire record. Since the distance over which the accidents occured is the relatively short distance of `r max(plotdata$distance)-min(plotdata$distance)` miles, the accident density is `r 52*7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))/(max(plotdata$distance)-min(plotdata$distance))` accident/year/mile. This compares to the total number of crashes `r TotalCrashes` reported along the 123 miles of highway covered by the `r file_name` data or `r 52*7 * (TotalCrashes)/as.numeric((rangeYM[2]- rangeYM[1]))/123`  accident/year/mile. Subsetting the data to remove Santiam Pass from teh rest of Highway20 the accident rate drops to `r 52*7 * (TotalCrashes-nrow(plotdata))/as.numeric((rangeYM[2]- rangeYM[1]))/(123-11)` over `r 123-11` miles. This means the accident rate on the 11 mile stretch of road as Santiam Pass is `r (52*7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))/(max(plotdata$distance)-min(plotdata$distance)))/(52*7 * (TotalCrashes-nrow(plotdata))/as.numeric((rangeYM[2]- rangeYM[1]))/(123-11))` times higher than on the rest of Highway20 on average. Note this does not preclude the existence of other hotspots.
 
-During this period there were `r nSnow` days with snow reported on the road. The rest of this analysis will look at how this affects the accident rate. 
+During this period there were `r nSnow` days with snow reported on the road over a total of `r tStart-tEnd` days. The rest of this analysis will look at how this affects the accident rate. 
 
 ###Timeline of accidents
 
@@ -270,9 +270,11 @@ sdmaxzstat<-(max(sdt$Freq)- sdmean)/sdsd
 
 ```
 
-The above histrogram shows substantial variation depending on the day of the week. Friday, in this anlaysis has almost four times the number of accidents than Wednesday. The mean number of accidents per weekday is `r cdmean` and the standard deviation is `r cdsd`. The minimum number of accidents is `r min(cdt$Freq)` and the maximum is `r max(cdt$Freq)`, having a ratio of `r max(cdt$Freq)/min(cdt$Freq)`:1.
+The histrogram shows substantial variation depending on the day of the week. For instance Friday has about four times the number of accidents as Wednesday.   
 
-Parentetically, the number of snow days show no significant correlation to the weekday. This is what you'd expect, but it's a good check of the data. The mean number of snow days per weekday is `r sdmean`. For reference the z statistic for the min is `r sdminzstat` and the max is `r sdmaxzstat`.
+The mean number of accidents per weekday is `r cdmean` and the standard deviation is `r cdsd`. The minimum number of accidents is `r min(cdt$Freq)` and the maximum is `r max(cdt$Freq)`, having a ratio of `r max(cdt$Freq)/min(cdt$Freq)`:1.
+
+Parenthetically, the number of snow days show no significant correlation to the weekday. This is what you'd expect, but it's a good check of the data. The mean number of snow days per weekday is `r sdmean`. For reference the z statistic for the min is `r sdminzstat` and the max is `r sdmaxzstat`.
 
 Hence, the day of the week plays as substantial role in the number of accidents.
 
@@ -336,4 +338,8 @@ The data here reveal several striking characteristics of this section of road.
 2. Since the distance over which the accidents occured is the relatively short distance (`r max(plotdata$distance)-min(plotdata$distance)` miles), the accident density  `r 52*7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))/(max(plotdata$distance)-min(plotdata$distance))` accident/year/mile is quite high.   
 3. Drivers wanting to avoid accidents on the Pass, judging from the number of accidents, shoudl cross on Tuesday, Wednesday, Thursday, or Sunday. This is especially important if worried about someone crashing into you, since these days provide a factor of protection ranging from three to four.   
 4. Establishing a correlation to the number of snow days, we find that there is an accident on this 11 miles stretch of road every four days there is snow there. 
+
+
+A next analysis will look at time of day. 
+
 
