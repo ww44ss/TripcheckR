@@ -37,7 +37,7 @@ user <- getUser(paste0("@", name))
 ## n is an adjustable variable
 ## user_data is a generic filename
 
-user_data<-userTimeline(user, n=900, maxID=NULL, sinceID=NULL, includeRts=FALSE)
+user_data<-userTimeline(user, n=1500, maxID=NULL, sinceID=NULL, includeRts=FALSE)
 
 
 ##convert data to dataframe
