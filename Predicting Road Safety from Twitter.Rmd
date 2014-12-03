@@ -9,19 +9,19 @@ output: html_document
 
 ###Summary
 
-The [Oregon Dept of Transportation](https://tripcheck.com/Pages/Twitter.asp) regularly publishes, as a public service, live road reports via Twitter. The record created by these tweets can be used to recontruct accident record on specific sections of road and also to correlate them with road conditions.  
+The [Oregon Dept of Transportation](https://tripcheck.com/Pages/Twitter.asp) regularly publishes, as a public service, live road reports via Twitter. The record created by these tweets is a huge public service since drivers can get real time information about road conditions. It can be used to recontruct events on specific sections of road over a longer baseline and to correlate them with road conditions, etc. for statistical analysis. 
 
-This analysis can be of benefit to drivers. The "average" citizen has few ways to learn or benefit from data about road safety in any tangible way. However, as better navigation tools and even self-driving cars become available, analysis of histroical data correlated with road conditions can not only improve travel times, but might also improve travel safety. 
+This analysis can be of benefit to drivers. The "average" citizen has today few ways to learn or benefit from historical data about road safety. However, as better navigation tools and even self-driving cars become available, analysis of historical data may not only improve travel times, but might also be used to improve travel safety through the choice of driving routes, driving time, or avoiding certain road conditions.
 
-The analysis focuses on a specific location, US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79) of Oregon. As the main route from the Central Oregon city of Bend to the Willamette Valley cities of Portland, Eugene, and Salem, Highway20 has high traffic year round and is the site of [frequent](http://www.nuggetnews.com/archives/960717/front1.shtml) accidents. 
+This article seeks to understand whether twitter data can be used for this purpose. 
 
-This analysis looks at the correlation of accidents to road conditions. 
+It focuses on a specific location, US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79) of Oregon. As the main route from the Central Oregon city of Bend to the Willamette Valley cities of Portland, Eugene, and Salem, Highway20 has high traffic year round and is the site of [frequent](http://www.nuggetnews.com/archives/960717/front1.shtml) accidents. 
 
-This analysis does not correlate accident rate to traffic volume, since that data are unavailable on Twitter.
+This analysis use historical data from Tiwtter to understand the correlation of accidents on this specific section of road to reported road conditions. 
 
 ###Get Tweets
 
-The twitter feed for this analysis is downloaded by a separate R program (Since I could not get RStudio to allow me to enter the required security features during execution). The data is stored as a .csv of Tweets locally. 
+The twitter feed for this analysis is downloaded by a separate R program (Since I could not get RStudio to allow me to enter the required security features during runtime execution). The data are stored as a .csv of Tweets locally. 
 
 
 ```{r "get_tweets", echo=FALSE, warning=FALSE}
@@ -84,7 +84,7 @@ Data are cleaned by searching the text for the strings "crash" and "snow" and th
         ##hw_df2 has just rows with "snow"
 
 
-        ##refine location to santiam pass
+        ##refine location to santiam pass for crashes
         location <- "Santiam Pass Summit"
         ##Get tweets with at location
         hwy_df <-hwy_df[grep(location, hwy_df$text),]
@@ -114,7 +114,7 @@ Data are cleaned by searching the text for the strings "crash" and "snow" and th
 
 ```
 
-###The influence of snow on crashes
+###Data analysis and reduction
 
 To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and then add two binary columns, one for whether a crash occured that day and whether snow was reported on the road. A few rows of the dataframe are shown.
 
@@ -140,7 +140,7 @@ To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and 
 
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
         #convert date column to date   
         #datecortab$date<-as.Date(datecortab$date, "1970-01-01")
 
@@ -180,18 +180,22 @@ Per this analysis in a period of `r dim(datecortab)[1]` days there were:
 • `r nSnow` days with snow  
 • `r nAccSnow[2]` days with snow and accidents  
 
-Hence  
+###Probability analysis  
 
+The specific rates can be derived from above:  
 p<sub>Acc</sub> = `r round(nAcc/dim(datecortab)[1],3)` per day.   
 p<sub>Snow</sub> = `r round(nSnow/dim(datecortab)[1],3)` per day.  
 p<sub>SnowAcc</sub> = `r round(nAccSnow[2]/(dim(datecortab)[1]),3)` per day.  
 
-Taking the probabilities as independent 
+From these the conditional probabilities can be derived.  
 
 ```{r, echo=FALSE}
-probaccgivensnow = round((nAccSnow[2]/(dim(datecortab)[1]))/(nSnow/dim(datecortab)[1]),3)
-probsnowgivenacc = round((nAccSnow[2]/(dim(datecortab)[1]))/(nAcc/dim(datecortab)[1]),3)
+probaccgivensnow <- round((nAccSnow[2]/(dim(datecortab)[1]))/(nSnow/dim(datecortab)[1]),3)
+probsnowgivenacc <- round((nAccSnow[2]/(dim(datecortab)[1]))/(nAcc/dim(datecortab)[1]),3)
 
+probaccnosnow <- (nAcc/dim(datecortab)[1] - nAccSnow[2]/(dim(datecortab)[1]))/(1-nSnow/dim(datecortab)[1])
+probaccnosnow <- round(probaccnosnow, 2)
+                                                                               
 ```
 
 p(Acc|Snow) = p<sub>SnowAcc</sub> / p<sub>Snow</sub> = `r probaccgivensnow`
@@ -200,15 +204,24 @@ and
 
 p(Snow|Acc) = p<sub>SnowAcc</sub> / p<sub>Acc</sub> = `r probsnowgivenacc`  
 
-Hence, the odds that if an accident occurs on Santiam pass, the odd there was snow is `r round(probsnowgivenacc/(1-probsnowgivenacc),1)`:1.
+Hence, the odds that if an accident occurs on Santiam pass snow was reported is `r round(probsnowgivenacc/(1-probsnowgivenacc),1)`:1, which is are slightly higher than even. 
+
+The probability an accident occured given there was no snow is  
+
+p(Acc|<span style="text-decoration: overline">Snow</span>) = (p<sub>Acc</sub> - p(Acc|Snow))/(1 - p<sub>Snow</sub>) = `r probaccnosnow`
+
+which implies odd of `r round(probaccnosnow/(1-probaccnosnow),3)`:1 or one about one chance in `r round((1-probaccnosnow)/probaccnosnow, 0)`.
 
 ###Conclusions
-This analysis shows that statistically significant data about raod safety conditions can be obtain from twitter, and that these data could serve as real time models to enhance safe driving. 
 
-For instance, if snow is reported on a given day, choosing a route that avoided a particularly dangerous section of road might enhance overall safety. 
+It appears twitter records can be used to understand road safety in a quantitative way.
+The data show a significant correlation of road conditions to traffic safety, with an increase in the odds of an accident increasing nearly a factor of 12 when snowy conditions are reported. 
+
+A next step in this anlaysis will be to use additional data features to improve prediction. 
 
 
-Comments are welcome.
+
+
 
 
 

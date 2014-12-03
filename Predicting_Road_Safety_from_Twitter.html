@@ -63,15 +63,15 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </div>
 <div id="summary" class="section level3">
 <h3>Summary</h3>
-<p>The <a href="https://tripcheck.com/Pages/Twitter.asp">Oregon Dept of Transportation</a> regularly publishes, as a public service, live road reports via Twitter. The record created by these tweets can be used to recontruct accident record on specific sections of road and also to correlate them with road conditions.</p>
-<p>This analysis can be of benefit to drivers. The “average” citizen has few ways to learn or benefit from data about road safety in any tangible way. However, as better navigation tools and even self-driving cars become available, analysis of histroical data correlated with road conditions can not only improve travel times, but might also improve travel safety.</p>
-<p>The analysis focuses on a specific location, US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79) of Oregon. As the main route from the Central Oregon city of Bend to the Willamette Valley cities of Portland, Eugene, and Salem, Highway20 has high traffic year round and is the site of <a href="http://www.nuggetnews.com/archives/960717/front1.shtml">frequent</a> accidents.</p>
-<p>This analysis looks at the correlation of accidents to road conditions.</p>
-<p>This analysis does not correlate accident rate to traffic volume, since that data are unavailable on Twitter.</p>
+<p>The <a href="https://tripcheck.com/Pages/Twitter.asp">Oregon Dept of Transportation</a> regularly publishes, as a public service, live road reports via Twitter. The record created by these tweets is a huge public service since drivers can get real time information about road conditions. It can be used to recontruct events on specific sections of road over a longer baseline and to correlate them with road conditions, etc. for statistical analysis.</p>
+<p>This analysis can be of benefit to drivers. The “average” citizen has today few ways to learn or benefit from historical data about road safety. However, as better navigation tools and even self-driving cars become available, analysis of historical data may not only improve travel times, but might also be used to improve travel safety through the choice of driving routes, driving time, or avoiding certain road conditions.</p>
+<p>This article seeks to understand whether twitter data can be used for this purpose.</p>
+<p>It focuses on a specific location, US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79) of Oregon. As the main route from the Central Oregon city of Bend to the Willamette Valley cities of Portland, Eugene, and Salem, Highway20 has high traffic year round and is the site of <a href="http://www.nuggetnews.com/archives/960717/front1.shtml">frequent</a> accidents.</p>
+<p>This analysis use historical data from Tiwtter to understand the correlation of accidents on this specific section of road to reported road conditions.</p>
 </div>
 <div id="get-tweets" class="section level3">
 <h3>Get Tweets</h3>
-<p>The twitter feed for this analysis is downloaded by a separate R program (Since I could not get RStudio to allow me to enter the required security features during execution). The data is stored as a .csv of Tweets locally.</p>
+<p>The twitter feed for this analysis is downloaded by a separate R program (Since I could not get RStudio to allow me to enter the required security features during runtime execution). The data are stored as a .csv of Tweets locally.</p>
 <p>The data analyzed cover the dates from 2012-11-01 to 2014-11-16. There are 1500 tweets during this period.</p>
 </div>
 <div id="data-cleaning" class="section level3">
@@ -92,8 +92,8 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 ## [6] US20, santiam pass smt, Slush or snow pack, Carry chains/Traction tires... http://t.co/lNAu3KkGmp
 ## 902 Levels: ORE126, @ Clear Lake - Belnap Springs Hwy OR126, Delay &amp;lt; 20min, A crash has occurred, use caution.... http://t.co/e38poXEA ...</code></pre>
 </div>
-<div id="the-influence-of-snow-on-crashes" class="section level3">
-<h3>The influence of snow on crashes</h3>
+<div id="data-analysis-and-reduction" class="section level3">
+<h3>Data analysis and reduction</h3>
 <p>To analyze the data create a dataframe of dates from 2014-11-16 to 2012-11-01 and then add two binary columns, one for whether a crash occured that day and whether snow was reported on the road. A few rows of the dataframe are shown.</p>
 <pre><code>##           date Accident  Snow
 ## 540 2013-05-26    FALSE FALSE
@@ -109,19 +109,23 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 ## 550 2013-05-16    FALSE FALSE</code></pre>
 <pre><code>## Waiting for profiling to be done...</code></pre>
 <p>Per this analysis in a period of 746 days there were:<br />• 99 accidents<br />• 181 days with snow<br />• 53 days with snow and accidents</p>
-<p>Hence</p>
-<p>p<sub>Acc</sub> = 0.133 per day.<br />p<sub>Snow</sub> = 0.243 per day.<br />p<sub>SnowAcc</sub> = 0.071 per day.</p>
-<p>Taking the probabilities as independent</p>
+</div>
+<div id="probability-analysis" class="section level3">
+<h3>Probability analysis</h3>
+<p>The specific rates can be derived from above:<br />p<sub>Acc</sub> = 0.133 per day.<br />p<sub>Snow</sub> = 0.243 per day.<br />p<sub>SnowAcc</sub> = 0.071 per day.</p>
+<p>From these the conditional probabilities can be derived.</p>
 <p>p(Acc|Snow) = p<sub>SnowAcc</sub> / p<sub>Snow</sub> = 0.293</p>
 <p>and</p>
 <p>p(Snow|Acc) = p<sub>SnowAcc</sub> / p<sub>Acc</sub> = 0.535</p>
-<p>Hence, the odds that if an accident occurs on Santiam pass, the odd there was snow is 1.2:1.</p>
+<p>Hence, the odds that if an accident occurs on Santiam pass snow was reported is 1.2:1, which is are slightly higher than even.</p>
+<p>The probability an accident occured given there was no snow is</p>
+<p>p(Acc|<span style="text-decoration: overline">Snow</span>) = (p<sub>Acc</sub> - p(Acc|Snow))/(1 - p<sub>Snow</sub>) = 0.08</p>
+<p>which implies odd of 0.087:1 or one about one chance in 12.</p>
 </div>
 <div id="conclusions" class="section level3">
 <h3>Conclusions</h3>
-<p>This analysis shows that statistically significant data about raod safety conditions can be obtain from twitter, and that these data could serve as real time models to enhance safe driving.</p>
-<p>For instance, if snow is reported on a given day, choosing a route that avoided a particularly dangerous section of road might enhance overall safety.</p>
-<p>Comments are welcome.</p>
+<p>It appears twitter records can be used to understand road safety in a quantitative way. The data show a significant correlation of road conditions to traffic safety, with an increase in the odds of an accident increasing nearly a factor of 12 when snowy conditions are reported.</p>
+<p>A next step in this anlaysis will be to use additional data features to improve prediction.</p>
 </div>
 
 
