@@ -63,14 +63,15 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </div>
 <div id="summary" class="section level3">
 <h3>Summary</h3>
-<p>The <a href="https://tripcheck.com/Pages/Twitter.asp">Oregon Dept of Transportation</a> regularly publishes, as a public service, live road reports via Twitter. The record created by these tweets is a huge public service since drivers can get real time information about road conditions. It can be used to recontruct events on specific sections of road over a longer baseline and to correlate them with road conditions, etc. for statistical analysis.</p>
+<p>The <a href="https://tripcheck.com/Pages/Twitter.asp">Oregon Dept of Transportation</a> regularly publishes, as a public service, live road reports via Twitter. The record created by these tweets is a great public service since drivers can get real time information about road conditions.</p>
+<p>However, this data can also be repurposed to recontruct events on specific sections of road over a longer baseline and to correlate them with road conditions, etc. for statistical analysis. That is the purpose of this analysis.</p>
 <p>This analysis can be of benefit to drivers. The “average” citizen has today few ways to learn or benefit from historical data about road safety. However, as better navigation tools and even self-driving cars become available, analysis of historical data may not only improve travel times, but might also be used to improve travel safety through the choice of driving routes, driving time, or avoiding certain road conditions.</p>
-<p>This article seeks to understand whether twitter data can be used for this purpose.</p>
-<p>It focuses on a specific location, US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79) of Oregon. As the main route from the Central Oregon city of Bend to the Willamette Valley cities of Portland, Eugene, and Salem, Highway20 has high traffic year round and is the site of <a href="http://www.nuggetnews.com/archives/960717/front1.shtml">frequent</a> accidents.</p>
-<p>This analysis use historical data from Tiwtter to understand the correlation of accidents on this specific section of road to reported road conditions.</p>
+<p>This article seeks to understand whether twitter data can be used for this purpose and to develop a predictive machine learning algorithm.</p>
+<p>Analysis focuses on a specific location, US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79) of Oregon. As the main route from the Central Oregon city of Bend to the Willamette Valley cities of Portland, Eugene, and Salem, Highway20 has high traffic year round and is the site of <a href="http://www.nuggetnews.com/archives/960717/front1.shtml">frequent</a> accidents.</p>
+<p>This analysis use historical data from Twitter to understand the correlation of accidents on this specific section of road to reported snowy road conditions.</p>
 </div>
-<div id="get-tweets" class="section level3">
-<h3>Get Tweets</h3>
+<div id="getting-the-tweets" class="section level3">
+<h3>Getting the Tweets</h3>
 <p>The twitter feed for this analysis is downloaded by a separate R program (Since I could not get RStudio to allow me to enter the required security features during runtime execution). The data are stored as a .csv of Tweets locally.</p>
 <p>The data analyzed cover the dates from 2012-11-01 to 2014-11-16. There are 1500 tweets during this period.</p>
 </div>
@@ -121,6 +122,33 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <p>The probability an accident occured given there was no snow is</p>
 <p>p(Acc|<span style="text-decoration: overline">Snow</span>) = (p<sub>Acc</sub> - p(Acc|Snow))/(1 - p<sub>Snow</sub>) = 0.08</p>
 <p>which implies odd of 0.087:1 or one about one chance in 12.</p>
+</div>
+<div id="logistic-regression" class="section level3">
+<h3>Logistic Regression</h3>
+<pre><code>## 
+## Call:
+## glm(formula = Accident ~ Snow - 1, family = binomial, data = datecortab)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -0.8324  -0.4121  -0.4121  -0.4121   2.2397  
+## 
+## Coefficients:
+##           Estimate Std. Error z value Pr(&gt;|z|)    
+## SnowFALSE  -2.4233     0.1538 -15.752  &lt; 2e-16 ***
+## SnowTRUE   -0.8817     0.1633  -5.398 6.73e-08 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 1034.18  on 746  degrees of freedom
+## Residual deviance:  537.79  on 744  degrees of freedom
+## AIC: 541.79
+## 
+## Number of Fisher Scoring iterations: 5</code></pre>
+<p>Hence according to the regression model 4.6717052 is the reduction in odds from snow to no snow.</p>
+<p>Need to think about this one a bit…</p>
 </div>
 <div id="conclusions" class="section level3">
 <h3>Conclusions</h3>

@@ -9,17 +9,19 @@ output: html_document
 
 ###Summary
 
-The [Oregon Dept of Transportation](https://tripcheck.com/Pages/Twitter.asp) regularly publishes, as a public service, live road reports via Twitter. The record created by these tweets is a huge public service since drivers can get real time information about road conditions. It can be used to recontruct events on specific sections of road over a longer baseline and to correlate them with road conditions, etc. for statistical analysis. 
+The [Oregon Dept of Transportation](https://tripcheck.com/Pages/Twitter.asp) regularly publishes, as a public service, live road reports via Twitter. The record created by these tweets is a great public service since drivers can get real time information about road conditions.  
+
+However, this data can also be repurposed to recontruct events on specific sections of road over a longer baseline and to correlate them with road conditions, etc. for statistical analysis. That is the purpose of this analysis.
 
 This analysis can be of benefit to drivers. The "average" citizen has today few ways to learn or benefit from historical data about road safety. However, as better navigation tools and even self-driving cars become available, analysis of historical data may not only improve travel times, but might also be used to improve travel safety through the choice of driving routes, driving time, or avoiding certain road conditions.
 
-This article seeks to understand whether twitter data can be used for this purpose. 
+This article seeks to understand whether twitter data can be used for this purpose and to develop a predictive machine learning algorithm.
 
-It focuses on a specific location, US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79) of Oregon. As the main route from the Central Oregon city of Bend to the Willamette Valley cities of Portland, Eugene, and Salem, Highway20 has high traffic year round and is the site of [frequent](http://www.nuggetnews.com/archives/960717/front1.shtml) accidents. 
+Analysis focuses on a specific location, US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79) of Oregon. As the main route from the Central Oregon city of Bend to the Willamette Valley cities of Portland, Eugene, and Salem, Highway20 has high traffic year round and is the site of [frequent](http://www.nuggetnews.com/archives/960717/front1.shtml) accidents. 
 
-This analysis use historical data from Tiwtter to understand the correlation of accidents on this specific section of road to reported road conditions. 
+This analysis use historical data from Twitter to understand the correlation of accidents on this specific section of road to reported snowy road conditions. 
 
-###Get Tweets
+###Getting the Tweets
 
 The twitter feed for this analysis is downloaded by a separate R program (Since I could not get RStudio to allow me to enter the required security features during runtime execution). The data are stored as a .csv of Tweets locally. 
 
@@ -155,7 +157,7 @@ To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and 
 
         ##do fit
         
-        f<-glm(as.numeric(Accident)~as.numeric(Snow)-1, family=binomial, datecortab)
+        f<-glm(Accident~Snow-1, family=binomial, datecortab)
 
 ```
 
@@ -211,6 +213,19 @@ The probability an accident occured given there was no snow is
 p(Acc|<span style="text-decoration: overline">Snow</span>) = (p<sub>Acc</sub> - p(Acc|Snow))/(1 - p<sub>Snow</sub>) = `r probaccnosnow`
 
 which implies odd of `r round(probaccnosnow/(1-probaccnosnow),3)`:1 or one about one chance in `r round((1-probaccnosnow)/probaccnosnow, 0)`.
+
+###Logistic Regression
+
+```{r, echo = FALSE}
+
+summary(f)
+
+
+```
+
+Hence according to the regression model `r exp(coef(f)[2]-coef(f)[1])` is the reduction in odds from snow to no snow.  
+
+Need to think about this one a bit...
 
 ###Conclusions
 
