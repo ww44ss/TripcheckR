@@ -33,9 +33,12 @@ library(RCurl)
 ## Get the relevnat tweet data
 
         if (getwd()=="/Users/winstonsaunders/Documents") {setwd("TripcheckR")}
+        if (getwd()!="/Users/winstonsaunders/Documents/TripcheckR") {setwd("/Users/winstonsaunders/Documents/TripcheckR")}
         file_name <- "TripCheckUS20B"
 
         hwy_df<-read.csv(paste0(file_name, ".csv"))
+
+        hwy_df$created[1:5]
 
         ##make the date column a date
         hwy_df$created<-as.Date(hwy_df$created)
@@ -55,41 +58,53 @@ The data analyzed cover the dates from `r tEnd` to `r tStart`. There are `r dim(
 
 
         incident <- "crash"
-        ## get tweets with S2
+        metaincident <- "snow"
+
+        ## get tweets with indicent or metaincident
+        hwy_data<-hwy_df[grep(incident, hwy_df$text)|grep(metaincident, hwy_df$text),]
+        hwy_data<-hwy_data[!duplicated(hwy_data$created),]
+
+
+        ##just incident
         hwy_crash <-hwy_df[grep(incident, hwy_df$text),]
         hwy_crash<-hwy_crash[!duplicated(hwy_crash$created),]
-
+        ##Total crashed reported by twitter feed for all of hwy 20
         TotalCrashes <- dim(hwy_crash)[1]
 
         ##add meta table for correlation
         ## need to be insterted first
-        metaincident <- "snow"
-        ## get tweets with S2
+        
+        ## get tweets with snow reported anywhere on hwy 20
         hwy_df2 <-hwy_df[grep(metaincident, hwy_df$text),]
 
+        ##hw_df2 has just rows with "snow"
 
-        ##Define Search Patterns
+
+        ##refine location to santiam pass
         location <- "Santiam Pass Summit"
-        ##Get tweets with S1
+        ##Get tweets with at location
         hwy_df <-hwy_df[grep(location, hwy_df$text),]
-        
-
-
-        
+        ##further reduce to those with just crash
         incident <- "crash"
-        ## get tweets with S2
+        ## get tweets with "crash"
         hwy_df <-hwy_df[grep(incident, hwy_df$text),]
         
-        
+        ##hwy_df is filtered for "Santiam Pass Summit" and "crash"
 
         
 
-##dedup the data
+        ##dedup the data
 
         hwy_df<-hwy_df[!duplicated(hwy_df$created),]
         hwy_df2<-hwy_df2[!duplicated(hwy_df2$created),]
 
-##analyze the hwy_df data
+
+```
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+        ##analyze the hwy_df data
+
+
 
         ## get details on the crash from the text string
 
@@ -134,8 +149,8 @@ The data analyzed cover the dates from `r tEnd` to `r tStart`. There are `r dim(
 ##data are processed and ready to plot
 
         ##define a couple of variables for later use
-        nAcc <- dim(plotdata)[1]
-        nSnow <- length(plotdata2)
+        nAcc <- dim(hwy_df)[1]
+        nSnow <- dim(hwy_df2)[1]
 
 ```
 
@@ -305,6 +320,58 @@ SnowRate<- nSnow/tTotal
 ```
 
 We can calculate rough estimated of the accident rate `r AccRate` crashes per day and the probability of snow  `r SnowRate` per day during the same period.
+
+```{r}
+
+        
+
+        ##CREATE BINARY DATA FRAME        
+
+        ##Start with dates
+        Tvect<-tStart:tEnd
+        #date<-as.Date(Tvect, "1970-01-01")
+        date<-Tvect
+        #Create dummy vectors
+        Accident <- rep(TRUE, length(Tvect))
+        Snow <- rep(TRUE, length(Tvect))
+
+        ##build date frame
+        datecortab<-cbind(date, Accident, Snow)
+        datecortab<-as.data.frame(datecortab)
+
+        #convert date column to date   
+        #datecortab$date<-as.Date(datecortab$date, "1970-01-01")
+
+        ##Find dates when crashes and snow occur and assign to columns
+        datecortab$Accident <- datecortab$date%in%hwy_df$created
+        datecortab$Snow <- datecortab$date%in%hwy_df2$created
+        
+
+        f<-glm(as.numeric(Accident)~as.numeric(Snow)-1, family=binomial, datecortab)
+
+       summary(f)$coef
+
+       exp(coef(f))
+
+        exp(confint(f))
+
+        NAA<-table(datecortab$Accident)
+        NSS<-table(datecortab$Snow)
+        
+        x<-datecortab$Snow&datecortab$Accident
+    
+   
+
+        NSSANDNAA<-table(x)
+        
+NAA
+
+NSS
+
+NSSANDNAA
+
+```
+
 
 ```{r, echo=FALSE}
 

@@ -69,8 +69,10 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <p>This analysis looks analyzes reports of snow covered road surface.</p>
 <p>This analysis establishes the accident frequency and density for a 11 mile stretch of road and looks at the correlation of snow and ice to traffic accidents. I show there is a high rate of accidents on the Pass (about one every two weeks) with rates varying by weekday as much as a factor of four. I also show the probability of accidents in adverse conditions is significantly higher than when there are no adverse conditions.</p>
 <p>This anlaysis does not correlate accident rate to traffic volume, since that data are unavailable on Twitter.</p>
+<pre><code>## [1] 2014-11-16 2014-11-16 2014-11-15 2014-11-15 2014-11-15
+## 482 Levels: 2012-11-01 2012-11-02 2012-11-09 2012-11-10 ... 2014-11-16</code></pre>
 <p>The data analyzed cover the dates from 2012-11-01 to 2014-11-16. There are 1500 tweets during this period.</p>
-<p>Filtering on the crtieria: <em>Santiam Pass Summit</em> and <em>crash</em> and taking complete cases reduces the number of ’crash data points to 88. During the same period there were <em>181</em> days with <em>snow</em>.</p>
+<p>Filtering on the crtieria: <em>Santiam Pass Summit</em> and <em>crash</em> and taking complete cases reduces the number of ’crash data points to 99. During the same period there were <em>181</em> days with <em>snow</em>.</p>
 <div id="summary-statistics-for-the-raw-data" class="section level4">
 <h4>summary statistics for the raw data</h4>
 <p>Over the period of study there were 0.8290713 accidents per week, meaning there is about one accident every two weeks when averaged over the entire record. Since the distance over which the accidents occured is the relatively short distance of 11 miles, the accident density is 3.9192463 accident/year/mile. This compares to the total number of crashes 267 reported along the 123 miles of highway covered by the TripCheckUS20B data or 1.063454 accident/year/mile. Subsetting the data to remove Santiam Pass from teh rest of Highway20 the accident rate drops to 0.7829744 over 112 miles. This means the accident rate on the 11 mile stretch of road as Santiam Pass is 5.0055866 times higher than on the rest of Highway20 on average. Note this does not preclude the existence of other hotspots.</p>
@@ -99,11 +101,66 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </div>
 <div id="is-snow-a-signficant-contributing-factor-to-accident-risk" class="section level3">
 <h3>Is snow a signficant contributing factor to accident risk?</h3>
-<p>We can calculate rough estimated of the accident rate 0.1181208 crashes per day and the probability of snow 0.242953 per day during the same period.</p>
+<p>We can calculate rough estimated of the accident rate 0.1328859 crashes per day and the probability of snow 0.242953 per day during the same period.</p>
+<pre class="r"><code>        ##CREATE BINARY DATA FRAME        
+
+        ##Start with dates
+        Tvect&lt;-tStart:tEnd
+        #date&lt;-as.Date(Tvect, &quot;1970-01-01&quot;)
+        date&lt;-Tvect
+        #Create dummy vectors
+        Accident &lt;- rep(TRUE, length(Tvect))
+        Snow &lt;- rep(TRUE, length(Tvect))
+
+        ##build date frame
+        datecortab&lt;-cbind(date, Accident, Snow)
+        datecortab&lt;-as.data.frame(datecortab)
+
+        #convert date column to date   
+        #datecortab$date&lt;-as.Date(datecortab$date, &quot;1970-01-01&quot;)
+
+        ##Find dates when crashes and snow occur and assign to columns
+        datecortab$Accident &lt;- datecortab$date%in%hwy_df$created
+        datecortab$Snow &lt;- datecortab$date%in%hwy_df2$created
+        
+
+        f&lt;-glm(as.numeric(Accident)~as.numeric(Snow)-1, family=binomial, datecortab)
+
+       summary(f)$coef</code></pre>
+<pre><code>##                    Estimate Std. Error   z value     Pr(&gt;|z|)
+## as.numeric(Snow) -0.8817384  0.1633413 -5.398133 6.733782e-08</code></pre>
+<pre class="r"><code>       exp(coef(f))</code></pre>
+<pre><code>## as.numeric(Snow) 
+##        0.4140625</code></pre>
+<pre class="r"><code>        exp(confint(f))</code></pre>
+<pre><code>## Waiting for profiling to be done...</code></pre>
+<pre><code>##     2.5 %    97.5 % 
+## 0.2982831 0.5666716</code></pre>
+<pre class="r"><code>        NAA&lt;-table(datecortab$Accident)
+        NSS&lt;-table(datecortab$Snow)
+        
+        x&lt;-datecortab$Snow&amp;datecortab$Accident
+    
+   
+
+        NSSANDNAA&lt;-table(x)
+        
+NAA</code></pre>
+<pre><code>## 
+## FALSE  TRUE 
+##   647    99</code></pre>
+<pre class="r"><code>NSS</code></pre>
+<pre><code>## 
+## FALSE  TRUE 
+##   565   181</code></pre>
+<pre class="r"><code>NSSANDNAA</code></pre>
+<pre><code>## x
+## FALSE  TRUE 
+##   693    53</code></pre>
 <p>With a little number crunching we find the probability that there was an accident given there was snow equal to (the number of days when there was snow and an accident) divided by (the number of days when there was snow) is 0.2707182.</p>
 <p><strong>That means that for roughly one in four days there is snow on the pass, there is an accident on this 11 mile stretch of road. </strong></p>
 <p>If we looked at specfic weekdays, the rate would be even higher.</p>
-<p>We can also use Bayes’s formula to show that the probability that there is snow on the road given as accident has occured is 0.5568182. Given there was snow on the road only 24.295302% of days this is a substantial amplification of risk.</p>
+<p>We can also use Bayes’s formula to show that the probability that there is snow on the road given as accident has occured is 0.4949495. Given there was snow on the road only 24.295302% of days this is a substantial amplification of risk.</p>
 </div>
 <div id="conclusions" class="section level3">
 <h3>Conclusions</h3>
