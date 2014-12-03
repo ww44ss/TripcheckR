@@ -321,7 +321,7 @@ SnowRate<- nSnow/tTotal
 
 We can calculate rough estimated of the accident rate `r AccRate` crashes per day and the probability of snow  `r SnowRate` per day during the same period.
 
-```{r}
+```{r, echo=FALSE}
 
         
 
@@ -347,66 +347,32 @@ We can calculate rough estimated of the accident rate `r AccRate` crashes per da
         datecortab$Snow <- datecortab$date%in%hwy_df2$created
         
 
+
         f<-glm(as.numeric(Accident)~as.numeric(Snow)-1, family=binomial, datecortab)
-
-       summary(f)$coef
-
-       exp(coef(f))
-
-        exp(confint(f))
-
-        NAA<-table(datecortab$Accident)
-        NSS<-table(datecortab$Snow)
-        
-        x<-datecortab$Snow&datecortab$Accident
-    
-   
-
-        NSSANDNAA<-table(x)
-        
-NAA
-
-NSS
-
-NSSANDNAA
 
 ```
 
 
 ```{r, echo=FALSE}
+        Gamma <- exp(coef(f))
 
-cd <- intersect(as.Date(plotdata$created), as.Date(plotdata2))
+        ConfInt<- exp(confint(f))
 
+        x<-datecortab$Snow&datecortab$Accident
+    
+   
 
-nCommon = length(cd)
-
-
-nCommRate = nCommon/nSnow
-
-PAgivenS <- nCommRate*SnowRate/AccRate
+        nAccSnow<-table(x)
+        
 
 ```
 
-With a little number crunching we find the probability that there was an accident given there was snow equal to (the number of days when there was snow and an accident) divided by (the number of days when there was snow) is `r nCommRate`. 
-  
-__That means that for roughly one in four days there is snow on the pass, there is an accident on this 11 mile stretch of road. __
 
-If we looked at specfic weekdays, the rate would be even higher.
+Per this anlaysis in a period of `r dim(datecortab)[1]` days there were:    
++ `r nAcc` accidents   
++ `r nSnow` days with snow  
++ `r nAccSnow[2]` days with snow and accidents  
 
-We can also use Bayes's formula to show that the probability that there is snow on the road given as accident has occured is `r PAgivenS`. Given there was snow on the road only `r 100*SnowRate`% of days this is a substantial amplification of risk.   
-
-
-###Conclusions
-
-Twitter data can be used to evaluate and predict road safety for the benefit of users.
-
-The data here reveal several striking characteristics of this section of road.  
-1. There is a very high accident rate, with `r 7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))` accidents per week.  
-2. Since the distance over which the accidents occured is the relatively short distance (`r max(plotdata$distance)-min(plotdata$distance)` miles), the accident density  `r 52*7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))/(max(plotdata$distance)-min(plotdata$distance))` accident/year/mile is quite high.   
-3. Drivers wanting to avoid accidents on the Pass, judging from the number of accidents, shoudl cross on Tuesday, Wednesday, Thursday, or Sunday. This is especially important if worried about someone crashing into you, since these days provide a factor of protection ranging from three to four.   
-4. Establishing a correlation to the number of snow days, we find that there is an accident on this 11 miles stretch of road every four days there is snow there. 
-
-
-A next analysis will look at time of day. 
+Using a binomial model, the coefficent relating accidents to snow is `r round(Gamma, 3)` with a confidence interval of `r ConfInt[1]` to `r ConfInt[2]`, since the confidence interval does not include zero we would reject the NULL hypothesis and conclude snow is a signficant contributor to accidents. 
 
 

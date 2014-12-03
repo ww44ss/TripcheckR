@@ -1,0 +1,215 @@
+---
+title: "Predicting Road Safety from Twitter"
+author: "Winston Saunders"
+date: "Dec 2014"
+output: html_document
+---
+
+#####_An analysis of winter road safety probabilities for Santiam Pass, Oregon_
+
+###Summary
+
+The [Oregon Dept of Transportation](https://tripcheck.com/Pages/Twitter.asp) regularly publishes, as a public service, live road reports via Twitter. The record created by these tweets can be used to recontruct accident record on specific sections of road and also to correlate them with road conditions.  
+
+This analysis can be of benefit to drivers. The "average" citizen has few ways to learn or benefit from data about road safety in any tangible way. However, as better navigation tools and even self-driving cars become available, analysis of histroical data correlated with road conditions can not only improve travel times, but might also improve travel safety. 
+
+The analysis focuses on a specific location, US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79) of Oregon. As the main route from the Central Oregon city of Bend to the Willamette Valley cities of Portland, Eugene, and Salem, Highway20 has high traffic year round and is the site of [frequent](http://www.nuggetnews.com/archives/960717/front1.shtml) accidents. 
+
+This analysis looks at the correlation of accidents to road conditions. 
+
+This analysis does not correlate accident rate to traffic volume, since that data are unavailable on Twitter.
+
+###Get Tweets
+
+The twitter feed for this analysis is downloaded by a separate R program (Since I could not get RStudio to allow me to enter the required security features during execution). The data is stored as a .csv of Tweets locally. 
+
+
+```{r "get_tweets", echo=FALSE, warning=FALSE}
+
+library(bitops)
+library(RCurl)
+
+##This program assumes you have already run the TwitterReader.R to download a feed timeline. 
+##It reads the data in teh form of a .csv 
+
+## Get the relevnat tweet data
+
+        if (getwd()=="/Users/winstonsaunders/Documents") {setwd("TripcheckR")}
+        if (getwd()!="/Users/winstonsaunders/Documents/TripcheckR") {setwd("/Users/winstonsaunders/Documents/TripcheckR")}
+        file_name <- "TripCheckUS20B"
+
+        hwy_df<-read.csv(paste0(file_name, ".csv"))
+
+        ##make the date column a date
+        hwy_df$created<-as.Date(hwy_df$created)
+
+        ### define start adn edn times of period 
+        tEnd <- hwy_df$created[length(hwy_df$created)]
+        tStart <- hwy_df$created[1]
+        
+
+
+```
+
+The data analyzed cover the dates from `r tEnd` to `r tStart`. There are `r dim(hwy_df)[1]` tweets during this period. 
+
+### Data cleaning
+
+Data are cleaned by searching the text for the strings "crash" and "snow" and then filtered for location "Santiam Pass Summit". A few tweets are shown below.
+
+
+```{r "clean", echo=FALSE, warning=FALSE}
+
+
+        incident <- "crash"
+        metaincident <- "snow"
+
+        ## get tweets with indicent or metaincident
+        hwy_data<-hwy_df[grep(incident, hwy_df$text)|grep(metaincident, hwy_df$text),]
+        hwy_data<-hwy_data[!duplicated(hwy_data$created),]
+
+
+        ##just incident
+        hwy_crash <-hwy_df[grep(incident, hwy_df$text),]
+        hwy_crash<-hwy_crash[!duplicated(hwy_crash$created),]
+        ##Total crashed reported by twitter feed for all of hwy 20
+        TotalCrashes <- dim(hwy_crash)[1]
+
+        ##add meta table for correlation
+        ## need to be insterted first
+        
+        ## get tweets with snow reported anywhere on hwy 20
+        hwy_df2 <-hwy_df[grep(metaincident, hwy_df$text),]
+
+        ##hw_df2 has just rows with "snow"
+
+
+        ##refine location to santiam pass
+        location <- "Santiam Pass Summit"
+        ##Get tweets with at location
+        hwy_df <-hwy_df[grep(location, hwy_df$text),]
+        ##further reduce to those with just crash
+        incident <- "crash"
+        ## get tweets with "crash"
+        hwy_df <-hwy_df[grep(incident, hwy_df$text),]
+        
+        ##hwy_df is filtered for "Santiam Pass Summit" and "crash"
+
+        
+
+        ##dedup the data
+
+        hwy_df<-hwy_df[!duplicated(hwy_df$created),]
+        hwy_df2<-hwy_df2[!duplicated(hwy_df2$created),]
+
+
+        ##Numbers of accidents adn snow for later use
+
+        nAcc <- dim(hwy_df)[1]
+        nSnow <- dim(hwy_df2)[1]
+
+        ##display some lines
+                hwy_df$text[30:35]
+                hwy_df2$text[15:20]
+
+```
+
+###The influence of snow on crashes
+
+To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and then add two binary columns, one for whether a crash occured that day and whether snow was reported on the road. A few rows of the dataframe are shown.
+
+
+```{r, echo=FALSE}
+
+        
+
+        ##CREATE BINARY DATA FRAME        
+
+        ##Start with dates
+        Tvect<-tStart:tEnd
+        #date<-as.Date(Tvect, "1970-01-01")
+        date<-Tvect
+        #Create dummy vectors
+        Accident <- rep(TRUE, length(Tvect))
+        Snow <- rep(TRUE, length(Tvect))
+
+        ##build date frame
+        datecortab<-cbind(date, Accident, Snow)
+        datecortab<-as.data.frame(datecortab)
+
+
+```
+
+```{r, echo=FALSE}
+        #convert date column to date   
+        #datecortab$date<-as.Date(datecortab$date, "1970-01-01")
+
+        ##Find dates when crashes and snow occur and assign to columns
+        datecortab$Accident <- datecortab$date%in%hwy_df$created
+        datecortab$Snow <- datecortab$date%in%hwy_df2$created
+        
+        ##create small table to print
+                xx<-datecortab
+                xx$date<-as.Date(xx$date, "1970-01-01")
+                xx[540:550,]
+
+        ##do fit
+        
+        f<-glm(as.numeric(Accident)~as.numeric(Snow)-1, family=binomial, datecortab)
+
+```
+
+
+```{r, echo=FALSE}
+        Gamma <- exp(coef(f))
+
+        ConfInt<- exp(confint(f))
+
+        x<-datecortab$Snow&datecortab$Accident
+    
+   
+
+        nAccSnow<-table(x)
+        
+
+```
+
+
+Per this analysis in a period of `r dim(datecortab)[1]` days there were:    
+• `r nAcc` accidents   
+• `r nSnow` days with snow  
+• `r nAccSnow[2]` days with snow and accidents  
+
+Hence  
+
+p<sub>Acc</sub> = `r round(nAcc/dim(datecortab)[1],3)` per day.   
+p<sub>Snow</sub> = `r round(nSnow/dim(datecortab)[1],3)` per day.  
+p<sub>SnowAcc</sub> = `r round(nAccSnow[2]/(dim(datecortab)[1]),3)` per day.  
+
+Taking the probabilities as independent 
+
+```{r, echo=FALSE}
+probaccgivensnow = round((nAccSnow[2]/(dim(datecortab)[1]))/(nSnow/dim(datecortab)[1]),3)
+probsnowgivenacc = round((nAccSnow[2]/(dim(datecortab)[1]))/(nAcc/dim(datecortab)[1]),3)
+
+```
+
+p(Acc|Snow) = p<sub>SnowAcc</sub> / p<sub>Snow</sub> = `r probaccgivensnow`
+
+and  
+
+p(Snow|Acc) = p<sub>SnowAcc</sub> / p<sub>Acc</sub> = `r probsnowgivenacc`  
+
+Hence, the odds that if an accident occurs on Santiam pass, the odd there was snow is `r round(probsnowgivenacc/(1-probsnowgivenacc),1)`:1.
+
+###Conclusions
+This analysis shows that statistically significant data about raod safety conditions can be obtain from twitter, and that these data could serve as real time models to enhance safe driving. 
+
+For instance, if snow is reported on a given day, choosing a route that avoided a particularly dangerous section of road might enhance overall safety. 
+
+
+Comments are welcome.
+
+
+
+
