@@ -127,23 +127,22 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <h3>Logistic Regression</h3>
 <pre><code>## 
 ## Call:
-## glm(formula = Accident ~ Snow + factor(weekday), family = binomial, 
-##     data = datecortab)
+## glm(formula = Accident ~ Snow + weekday, family = binomial, data = datecortab)
 ## 
 ## Deviance Residuals: 
 ##     Min       1Q   Median       3Q      Max  
 ## -1.1769  -0.6001  -0.3698  -0.3263   2.5488  
 ## 
 ## Coefficients:
-##                          Estimate Std. Error z value Pr(&gt;|z|)    
-## (Intercept)               -1.6231     0.2523  -6.433 1.25e-10 ***
-## SnowTRUE                   1.6220     0.2320   6.991 2.72e-12 ***
-## factor(weekday)Monday     -0.9811     0.3940  -2.490 0.012758 *  
-## factor(weekday)Saturday   -0.4117     0.3567  -1.154 0.248358    
-## factor(weekday)Sunday     -1.0255     0.3944  -2.600 0.009320 ** 
-## factor(weekday)Thursday   -1.2834     0.4221  -3.041 0.002360 ** 
-## factor(weekday)Tuesday    -1.1247     0.4106  -2.740 0.006151 ** 
-## factor(weekday)Wednesday  -1.5855     0.4692  -3.379 0.000727 ***
+##                  Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)       -1.6231     0.2523  -6.433 1.25e-10 ***
+## SnowTRUE           1.6220     0.2320   6.991 2.72e-12 ***
+## weekdayMonday     -0.9811     0.3940  -2.490 0.012758 *  
+## weekdaySaturday   -0.4117     0.3567  -1.154 0.248358    
+## weekdaySunday     -1.0255     0.3944  -2.600 0.009320 ** 
+## weekdayThursday   -1.2834     0.4221  -3.041 0.002360 ** 
+## weekdayTuesday    -1.1247     0.4106  -2.740 0.006151 ** 
+## weekdayWednesday  -1.5855     0.4692  -3.379 0.000727 ***
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
@@ -154,6 +153,16 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 ## AIC: 533.36
 ## 
 ## Number of Fisher Scoring iterations: 5</code></pre>
+<pre><code>## Waiting for profiling to be done...</code></pre>
+<pre><code>##                      2.5 %     97.5 %
+## (Intercept)      -2.139745 -1.1473637
+## SnowTRUE          1.169875  2.0814159
+## weekdayMonday    -1.778548 -0.2248907
+## weekdaySaturday  -1.119991  0.2840088
+## weekdaySunday    -1.823965 -0.2686108
+## weekdayThursday  -2.150413 -0.4825603
+## weekdayTuesday   -1.963207 -0.3420500
+## weekdayWednesday -2.574381 -0.7119978</code></pre>
 <p>Hence according to the regression model 25.6633499 is the reduction in odds from snow to no snow.</p>
 <p>Need to think about this one a bit…</p>
 </div>

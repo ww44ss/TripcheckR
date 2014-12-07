@@ -160,7 +160,7 @@ To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and 
 
         ##do fit
         
-        f<-glm(Accident~Snow + factor(weekday), family=binomial, datecortab)
+        f<-glm(Accident~Snow + weekday, family=binomial, datecortab)
 
 ```
 
@@ -222,6 +222,9 @@ which implies odd of `r round(probaccnosnow/(1-probaccnosnow),3)`:1 or one about
 ```{r, echo = FALSE}
 
 summary(f)
+
+
+confint(f)
 
 
 ```
