@@ -125,45 +125,20 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </div>
 <div id="logistic-regression" class="section level3">
 <h3>Logistic Regression</h3>
-<pre><code>## 
-## Call:
-## glm(formula = Accident ~ Snow + weekday, family = binomial, data = datecortab)
-## 
-## Deviance Residuals: 
-##     Min       1Q   Median       3Q      Max  
-## -1.1769  -0.6001  -0.3698  -0.3263   2.5488  
-## 
-## Coefficients:
-##                  Estimate Std. Error z value Pr(&gt;|z|)    
-## (Intercept)       -1.6231     0.2523  -6.433 1.25e-10 ***
-## SnowTRUE           1.6220     0.2320   6.991 2.72e-12 ***
-## weekdayMonday     -0.9811     0.3940  -2.490 0.012758 *  
-## weekdaySaturday   -0.4117     0.3567  -1.154 0.248358    
-## weekdaySunday     -1.0255     0.3944  -2.600 0.009320 ** 
-## weekdayThursday   -1.2834     0.4221  -3.041 0.002360 ** 
-## weekdayTuesday    -1.1247     0.4106  -2.740 0.006151 ** 
-## weekdayWednesday  -1.5855     0.4692  -3.379 0.000727 ***
-## ---
-## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
-## 
-## (Dispersion parameter for binomial family taken to be 1)
-## 
-##     Null deviance: 584.12  on 745  degrees of freedom
-## Residual deviance: 517.36  on 738  degrees of freedom
-## AIC: 533.36
-## 
-## Number of Fisher Scoring iterations: 5</code></pre>
+</div>
+<div id="odd-ratios-for-the-model" class="section level3">
+<h3>Odd ratios for the model</h3>
 <pre><code>## Waiting for profiling to be done...</code></pre>
-<pre><code>##                      2.5 %     97.5 %
-## (Intercept)      -2.139745 -1.1473637
-## SnowTRUE          1.169875  2.0814159
-## weekdayMonday    -1.778548 -0.2248907
-## weekdaySaturday  -1.119991  0.2840088
-## weekdaySunday    -1.823965 -0.2686108
-## weekdayThursday  -2.150413 -0.4825603
-## weekdayTuesday   -1.963207 -0.3420500
-## weekdayWednesday -2.574381 -0.7119978</code></pre>
-<p>Hence according to the regression model 25.6633499 is the reduction in odds from snow to no snow.</p>
+<pre><code>##                         OR      2.5 %    97.5 %
+## (Intercept)      0.1972874 0.11768483 0.3174726
+## SnowTRUE         5.0630543 3.22158879 8.0158103
+## weekdayMonday    0.3748842 0.16888311 0.7986035
+## weekdaySaturday  0.6625148 0.32628264 1.3284446
+## weekdaySunday    0.3586170 0.16138467 0.7644407
+## weekdayThursday  0.2771011 0.11643602 0.6172012
+## weekdayTuesday   0.3247345 0.14040744 0.7103127
+## weekdayWednesday 0.2048529 0.07620098 0.4906630</code></pre>
+<p>Hence according to the regression model 5.06 is the increase in odds from no snow to snow.</p>
 <p>Need to think about this one a bit…</p>
 </div>
 <div id="conclusions" class="section level3">

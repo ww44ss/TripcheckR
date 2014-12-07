@@ -219,17 +219,19 @@ which implies odd of `r round(probaccnosnow/(1-probaccnosnow),3)`:1 or one about
 
 ###Logistic Regression
 
+
+###Odd ratios for the model
+
 ```{r, echo = FALSE}
 
-summary(f)
+a <- exp(cbind(OR = coef(f), confint(f)))
 
-
-confint(f)
+a
 
 
 ```
 
-Hence according to the regression model `r exp(coef(f)[2]-coef(f)[1])` is the reduction in odds from snow to no snow.  
+Hence according to the regression model `r round(a[2,1],2)` is the increase in odds from no snow to snow.  
 
 Need to think about this one a bit...
 
