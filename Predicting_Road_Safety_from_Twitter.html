@@ -65,7 +65,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <h3>Summary</h3>
 <p>The <a href="https://tripcheck.com/Pages/Twitter.asp">Oregon Dept of Transportation</a> regularly publishes, as a public service, live road reports via Twitter. The record created by these tweets is a great public service since drivers can get real time information about road conditions.</p>
 <p>However, this data can also be repurposed to recontruct events on specific sections of road over a longer baseline and to correlate them with road conditions, etc. for statistical analysis. That is the purpose of this analysis.</p>
-<p>This analysis can be of benefit to drivers. The “average” citizen has today few ways to learn or benefit from historical data about road safety. However, as better navigation tools and even self-driving cars become available, analysis of historical data may not only improve travel times, but might also be used to improve travel safety through the choice of driving routes, driving time, or avoiding certain road conditions.</p>
+<p>This analysis can benefit to drivers. The “average” citizen has today few ways to learn or benefit from historical data about road safety. However, as better navigation tools and even self-driving cars become available, analysis of historical data may not only improve travel times, but might also be used to improve travel safety through the choice of driving routes, driving time, or avoiding certain road conditions.</p>
 <p>This article seeks to understand whether twitter data can be used for this purpose and to develop a predictive machine learning algorithm.</p>
 <p>Analysis focuses on a specific location, US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79) of Oregon. As the main route from the Central Oregon city of Bend to the Willamette Valley cities of Portland, Eugene, and Salem, Highway20 has high traffic year round and is the site of <a href="http://www.nuggetnews.com/archives/960717/front1.shtml">frequent</a> accidents.</p>
 <p>This analysis use historical data from Twitter to understand the correlation of accidents on this specific section of road to reported snowy road conditions.</p>
@@ -96,18 +96,18 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <div id="data-analysis-and-reduction" class="section level3">
 <h3>Data analysis and reduction</h3>
 <p>To analyze the data create a dataframe of dates from 2014-11-16 to 2012-11-01 and then add two binary columns, one for whether a crash occured that day and whether snow was reported on the road. A few rows of the dataframe are shown.</p>
-<pre><code>##           date Accident  Snow
-## 540 2013-05-26    FALSE FALSE
-## 541 2013-05-25    FALSE FALSE
-## 542 2013-05-24     TRUE FALSE
-## 543 2013-05-23    FALSE  TRUE
-## 544 2013-05-22     TRUE  TRUE
-## 545 2013-05-21    FALSE  TRUE
-## 546 2013-05-20     TRUE FALSE
-## 547 2013-05-19    FALSE FALSE
-## 548 2013-05-18    FALSE FALSE
-## 549 2013-05-17     TRUE FALSE
-## 550 2013-05-16    FALSE FALSE</code></pre>
+<pre><code>##           date Accident  Snow   weekday
+## 540 2013-05-26    FALSE FALSE    Sunday
+## 541 2013-05-25    FALSE FALSE  Saturday
+## 542 2013-05-24     TRUE FALSE    Friday
+## 543 2013-05-23    FALSE  TRUE  Thursday
+## 544 2013-05-22     TRUE  TRUE Wednesday
+## 545 2013-05-21    FALSE  TRUE   Tuesday
+## 546 2013-05-20     TRUE FALSE    Monday
+## 547 2013-05-19    FALSE FALSE    Sunday
+## 548 2013-05-18    FALSE FALSE  Saturday
+## 549 2013-05-17     TRUE FALSE    Friday
+## 550 2013-05-16    FALSE FALSE  Thursday</code></pre>
 <pre><code>## Waiting for profiling to be done...</code></pre>
 <p>Per this analysis in a period of 746 days there were:<br />• 99 accidents<br />• 181 days with snow<br />• 53 days with snow and accidents</p>
 </div>
@@ -127,27 +127,34 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <h3>Logistic Regression</h3>
 <pre><code>## 
 ## Call:
-## glm(formula = Accident ~ Snow - 1, family = binomial, data = datecortab)
+## glm(formula = Accident ~ Snow + factor(weekday), family = binomial, 
+##     data = datecortab)
 ## 
 ## Deviance Residuals: 
 ##     Min       1Q   Median       3Q      Max  
-## -0.8324  -0.4121  -0.4121  -0.4121   2.2397  
+## -1.1769  -0.6001  -0.3698  -0.3263   2.5488  
 ## 
 ## Coefficients:
-##           Estimate Std. Error z value Pr(&gt;|z|)    
-## SnowFALSE  -2.4233     0.1538 -15.752  &lt; 2e-16 ***
-## SnowTRUE   -0.8817     0.1633  -5.398 6.73e-08 ***
+##                          Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)               -1.6231     0.2523  -6.433 1.25e-10 ***
+## SnowTRUE                   1.6220     0.2320   6.991 2.72e-12 ***
+## factor(weekday)Monday     -0.9811     0.3940  -2.490 0.012758 *  
+## factor(weekday)Saturday   -0.4117     0.3567  -1.154 0.248358    
+## factor(weekday)Sunday     -1.0255     0.3944  -2.600 0.009320 ** 
+## factor(weekday)Thursday   -1.2834     0.4221  -3.041 0.002360 ** 
+## factor(weekday)Tuesday    -1.1247     0.4106  -2.740 0.006151 ** 
+## factor(weekday)Wednesday  -1.5855     0.4692  -3.379 0.000727 ***
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 ## 
 ## (Dispersion parameter for binomial family taken to be 1)
 ## 
-##     Null deviance: 1034.18  on 746  degrees of freedom
-## Residual deviance:  537.79  on 744  degrees of freedom
-## AIC: 541.79
+##     Null deviance: 584.12  on 745  degrees of freedom
+## Residual deviance: 517.36  on 738  degrees of freedom
+## AIC: 533.36
 ## 
 ## Number of Fisher Scoring iterations: 5</code></pre>
-<p>Hence according to the regression model 4.6717052 is the reduction in odds from snow to no snow.</p>
+<p>Hence according to the regression model 25.6633499 is the reduction in odds from snow to no snow.</p>
 <p>Need to think about this one a bit…</p>
 </div>
 <div id="conclusions" class="section level3">

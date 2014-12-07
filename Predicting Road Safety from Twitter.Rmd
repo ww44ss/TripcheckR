@@ -13,7 +13,7 @@ The [Oregon Dept of Transportation](https://tripcheck.com/Pages/Twitter.asp) reg
 
 However, this data can also be repurposed to recontruct events on specific sections of road over a longer baseline and to correlate them with road conditions, etc. for statistical analysis. That is the purpose of this analysis.
 
-This analysis can be of benefit to drivers. The "average" citizen has today few ways to learn or benefit from historical data about road safety. However, as better navigation tools and even self-driving cars become available, analysis of historical data may not only improve travel times, but might also be used to improve travel safety through the choice of driving routes, driving time, or avoiding certain road conditions.
+This analysis can benefit to drivers. The "average" citizen has today few ways to learn or benefit from historical data about road safety. However, as better navigation tools and even self-driving cars become available, analysis of historical data may not only improve travel times, but might also be used to improve travel safety through the choice of driving routes, driving time, or avoiding certain road conditions.
 
 This article seeks to understand whether twitter data can be used for this purpose and to develop a predictive machine learning algorithm.
 
@@ -67,8 +67,8 @@ Data are cleaned by searching the text for the strings "crash" and "snow" and th
         metaincident <- "snow"
 
         ## get tweets with indicent or metaincident
-        hwy_data<-hwy_df[grep(incident, hwy_df$text)|grep(metaincident, hwy_df$text),]
-        hwy_data<-hwy_data[!duplicated(hwy_data$created),]
+        #hwy_snow<-hwy_df[grep(incident, hwy_df$text)|grep(metaincident, hwy_df$text),]
+        #hwy_snow<-hwy_snow[!duplicated(hwy_snow$created),]
 
 
         ##just incident
@@ -81,7 +81,7 @@ Data are cleaned by searching the text for the strings "crash" and "snow" and th
         ## need to be insterted first
         
         ## get tweets with snow reported anywhere on hwy 20
-        hwy_df2 <-hwy_df[grep(metaincident, hwy_df$text),]
+        hwy_snow <-hwy_df[grep(metaincident, hwy_df$text),]
 
         ##hw_df2 has just rows with "snow"
 
@@ -102,17 +102,17 @@ Data are cleaned by searching the text for the strings "crash" and "snow" and th
         ##dedup the data
 
         hwy_df<-hwy_df[!duplicated(hwy_df$created),]
-        hwy_df2<-hwy_df2[!duplicated(hwy_df2$created),]
+        hwy_snow<-hwy_snow[!duplicated(hwy_snow$created),]
 
 
         ##Numbers of accidents adn snow for later use
 
         nAcc <- dim(hwy_df)[1]
-        nSnow <- dim(hwy_df2)[1]
+        nSnow <- dim(hwy_snow)[1]
 
         ##display some lines
                 hwy_df$text[30:35]
-                hwy_df2$text[15:20]
+                hwy_snow$text[15:20]
 
 ```
 
@@ -137,7 +137,10 @@ To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and 
 
         ##build date frame
         datecortab<-cbind(date, Accident, Snow)
+        
         datecortab<-as.data.frame(datecortab)
+
+        datecortab$weekday<-weekdays(as.Date(datecortab$date, "1970-01-01"))
 
 
 ```
@@ -148,7 +151,7 @@ To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and 
 
         ##Find dates when crashes and snow occur and assign to columns
         datecortab$Accident <- datecortab$date%in%hwy_df$created
-        datecortab$Snow <- datecortab$date%in%hwy_df2$created
+        datecortab$Snow <- datecortab$date%in%hwy_snow$created
         
         ##create small table to print
                 xx<-datecortab
@@ -157,7 +160,7 @@ To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and 
 
         ##do fit
         
-        f<-glm(Accident~Snow-1, family=binomial, datecortab)
+        f<-glm(Accident~Snow + factor(weekday), family=binomial, datecortab)
 
 ```
 
