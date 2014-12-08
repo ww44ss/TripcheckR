@@ -45,7 +45,7 @@ user_data<-userTimeline(user, n=1500, maxID=NULL, sinceID=NULL, includeRts=FALSE
 clean_data<-do.call(rbind,lapply(user_data,as.data.frame))
 
 ##convert times to R format
-##clean_data$created<-as.Date(clean_data$created)
+clean_data$created<-as.Date(clean_data$created)
 
 write.csv(clean_data, paste0(name,".csv"))
 
