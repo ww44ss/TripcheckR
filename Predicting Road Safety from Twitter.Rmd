@@ -54,7 +54,7 @@ library(RCurl)
         ##make an "hour" column (for time of day)
         hwy_df$hour<-as.POSIXlt(hwy_df$created)$hour
 
-        ### define start adn edn times of period 
+        ### capture start adn edn times of period 
         tEnd <- as.Date(hwy_df$created)[length(hwy_df$created)]
         tStart <- as.Date(hwy_df$created[1])
         
@@ -65,6 +65,7 @@ The data analyzed cover the dates from `r tEnd` to `r tStart`. There are `r dim(
 
 Data are cleaned by searching the text for the strings "crash" and "snow" and then filtered for location "Santiam Pass Summit". A few tweets are shown below.
 
+## Data Analysis
 
 ```{r "clean", echo=FALSE, warning=FALSE}
 
@@ -101,6 +102,7 @@ Data are cleaned by searching the text for the strings "crash" and "snow" and th
         hwy_df <-hwy_df[grep("crash", hwy_df$text),]
 
         ##dedup the data
+        ## do this because not possible to tell whether there are multiple tweets from same crash
         hwy_df<-hwy_df[!duplicated(hwy_df$date),]
         
         ### hwy_df now contained events concerning crashes at Santiam Summit
@@ -111,8 +113,8 @@ Data are cleaned by searching the text for the strings "crash" and "snow" and th
         nSnow <- dim(hwy_snow)[1]
 
         ##display some lines
-                hwy_df$text[30:35]
-                hwy_snow$text[15:20]
+                substring(hwy_df$text,1,90)[30:35] 
+                substring(hwy_snow$text,1,60)[15:20]
 
 ```
 
@@ -248,10 +250,12 @@ To look for correations with time of day need to simplify data to include only d
 ```{r}
 require(ggplot2)
 
-head(hwy_df)
-p1 <- ggplot(hwy_df, aes(date,hour)) + geom_point()
+p1 <- ggplot(hwy_df, aes(date,hour)) + geom_point(color= "red")
 
 p1  
+
+
+hist(hwy_df$hour, breaks = 24, col="lightblue")
 
 ```
   
