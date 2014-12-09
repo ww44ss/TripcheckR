@@ -6,7 +6,7 @@ date: "Dec 2014"
 output: html_document
 ---
 
-#####_An analysis of winter road safety probabilities for Santiam Pass, Oregon_
+#####Analysis of winter road safety probabilities for Santiam Pass, Oregon_
 
 ###Summary
 
@@ -14,7 +14,7 @@ The [Oregon Dept of Transportation](https://tripcheck.com/Pages/Twitter.asp) reg
 
 However, this data can also be repurposed to recontruct events on specific sections of road over a longer baseline and to correlate them with road conditions, etc. for statistical analysis. That is the purpose of this analysis.
 
-This analysis can benefit to drivers. The "average" citizen has today few ways to learn or benefit from historical data about road safety. However, as better navigation tools and even self-driving cars become available, analysis of historical data may not only improve travel times, but might also be used to improve travel safety through the choice of driving routes, driving time, or avoiding certain road conditions.
+This analysis can benefit drivers. The "average" citizen has today few ways to learn or benefit from historical data about road safety. However, as better navigation tools and even self-driving cars become available, analysis of historical data may not only improve travel times, but might also be used to improve travel safety through the choice of driving routes, driving time, or avoiding certain road conditions.
 
 This article seeks to understand whether twitter data can be used for this purpose and to develop a predictive machine learning algorithm.
 
@@ -39,20 +39,19 @@ library(RCurl)
 
         if (getwd()=="/Users/winstonsaunders/Documents") {setwd("TripcheckR")}
         if (getwd()!="/Users/winstonsaunders/Documents/TripcheckR") {setwd("/Users/winstonsaunders/Documents/TripcheckR")}
-        file_name <- "TripCheckUS20B"
+        file_name <- "TripCheckUS20B_N"
 
         hwy_df<-read.csv(paste0(file_name, ".csv"))
 
-        print(hwy_df$created[1:5])
+        #print(hwy_df$date[1:5])
 
         ##make the date column a date
-        hwy_df$created<-as.Date(hwy_df$created)
+        hwy_df$date<-as.Date(hwy_df$created)
 
         ### define start adn edn times of period 
-        tEnd <- hwy_df$created[length(hwy_df$created)]
-        tStart <- hwy_df$created[1]
+        tEnd <- as.Date(hwy_df$created)[length(hwy_df$created)]
+        tStart <- as.Date(hwy_df$created[1])
         
-
 
 ```
 
@@ -74,17 +73,17 @@ Data are cleaned by searching the text for the strings "crash" and "snow" and th
         #hwy_snow<-hwy_snow[!duplicated(hwy_snow$created),]
 
 
-        ##just incident
-        hwy_crash <-hwy_df[grep(incident, hwy_df$text),]
+        ##Get Crashed
+        hwy_crash <-hwy_df[grep("crash", hwy_df$text),]
         hwy_crash<-hwy_crash[!duplicated(hwy_crash$created),]
         ##Total crashed reported by twitter feed for all of hwy 20
         TotalCrashes <- dim(hwy_crash)[1]
 
-        ##add meta table for correlation
-        ## need to be insterted first
         
         ## get tweets with snow reported anywhere on hwy 20
-        hwy_snow <-hwy_df[grep(metaincident, hwy_df$text),]
+        hwy_snow <-hwy_df[grep("snow", hwy_df$text),]
+        ## dedupe
+        hwy_snow<-hwy_snow[!duplicated(hwy_snow$date),]
 
         ##hw_df2 has just rows with "snow"
 
@@ -93,20 +92,14 @@ Data are cleaned by searching the text for the strings "crash" and "snow" and th
         location <- "Santiam Pass Summit"
         ##Get tweets with at location
         hwy_df <-hwy_df[grep(location, hwy_df$text),]
-        ##further reduce to those with just crash
-        incident <- "crash"
-        ## get tweets with "crash"
-        hwy_df <-hwy_df[grep(incident, hwy_df$text),]
-        
-        ##hwy_df is filtered for "Santiam Pass Summit" and "crash"
 
-        
+        ## get tweets with "crash"
+        hwy_df <-hwy_df[grep("crash", hwy_df$text),]
 
         ##dedup the data
-
-        hwy_df<-hwy_df[!duplicated(hwy_df$created),]
-        hwy_snow<-hwy_snow[!duplicated(hwy_snow$created),]
-
+        hwy_df<-hwy_df[!duplicated(hwy_df$date),]
+        
+        ### hwy_df now contained events concerning crashes at Santiam Summit
 
         ##Numbers of accidents adn snow for later use
 
@@ -134,7 +127,7 @@ To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and 
         Tvect<-tStart:tEnd
         #date<-as.Date(Tvect, "1970-01-01")
         date<-Tvect
-        #Create dummy vectors
+        #Create dummy vectors for Accident and Snow
         Accident <- rep(TRUE, length(Tvect))
         Snow <- rep(TRUE, length(Tvect))
 
@@ -143,8 +136,11 @@ To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and 
         
         datecortab<-as.data.frame(datecortab)
 
+        ##add weekday
+
         datecortab$weekday<-weekdays(as.Date(datecortab$date, "1970-01-01"))
 
+                
 
 ```
 
@@ -153,22 +149,22 @@ To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and 
         #datecortab$date<-as.Date(datecortab$date, "1970-01-01")
 
         ##Find dates when crashes and snow occur and assign to columns
-        datecortab$Accident <- datecortab$date%in%hwy_df$created
-        datecortab$Snow <- datecortab$date%in%hwy_snow$created
+        datecortab$Accident <- datecortab$date%in%hwy_df$date
+        datecortab$Snow <- datecortab$date%in%hwy_snow$date
         
         ##create small table to print
                 xx<-datecortab
                 xx$date<-as.Date(xx$date, "1970-01-01")
-                xx[540:550,]
+                xx[600:615,]
 
         ##do fit
-        
-        f<-glm(Accident~Snow + weekday, family=binomial, datecortab)
-
 ```
 
 
-```{r, echo=FALSE}
+```{r, echo=FALSE}        
+        f<-glm(Accident~Snow+weekday, family=binomial, datecortab)
+
+
         Gamma <- exp(coef(f))
 
         ConfInt<- exp(confint(f))
@@ -212,7 +208,7 @@ and
 
 p(Snow|Acc) = p<sub>SnowAcc</sub> / p<sub>Acc</sub> = `r probsnowgivenacc`  
 
-Hence, the odds that if an accident occurs on Santiam pass snow was reported is `r round(probsnowgivenacc/(1-probsnowgivenacc),1)`:1, which is are slightly higher than even. 
+Hence, the odds that an accident occurs on Santiam pass if snow is reported is `r round(probaccgivensnow/(1-probaccgivensnow),2)`:1, which are about half. 
 
 The probability an accident occured given there was no snow is  
 
@@ -220,8 +216,11 @@ p(Acc|<span style="text-decoration: overline">Snow</span>) = (p<sub>Acc</sub> - 
 
 which implies odd of `r round(probaccnosnow/(1-probaccnosnow),3)`:1 or one about one chance in `r round((1-probaccnosnow)/probaccnosnow, 0)`.
 
+This implies and odd ratio of `r round((probaccgivensnow/(1-probaccgivensnow))/probaccnosnow/(1-probaccnosnow),2)`
+
 ###Logistic Regression
 
+We can check that by doing logisitc regression. 
 
 ###Odd ratios for the model
 

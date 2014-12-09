@@ -58,14 +58,14 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </div>
 
 
-<div id="an-analysis-of-winter-road-safety-probabilities-for-santiam-pass-oregon" class="section level5">
-<h5><em>An analysis of winter road safety probabilities for Santiam Pass, Oregon</em></h5>
+<div id="analysis-of-winter-road-safety-probabilities-for-santiam-pass-oregon_" class="section level5">
+<h5>Analysis of winter road safety probabilities for Santiam Pass, Oregon_</h5>
 </div>
 <div id="summary" class="section level3">
 <h3>Summary</h3>
 <p>The <a href="https://tripcheck.com/Pages/Twitter.asp">Oregon Dept of Transportation</a> regularly publishes, as a public service, live road reports via Twitter. The record created by these tweets is a great public service since drivers can get real time information about road conditions.</p>
 <p>However, this data can also be repurposed to recontruct events on specific sections of road over a longer baseline and to correlate them with road conditions, etc. for statistical analysis. That is the purpose of this analysis.</p>
-<p>This analysis can benefit to drivers. The “average” citizen has today few ways to learn or benefit from historical data about road safety. However, as better navigation tools and even self-driving cars become available, analysis of historical data may not only improve travel times, but might also be used to improve travel safety through the choice of driving routes, driving time, or avoiding certain road conditions.</p>
+<p>This analysis can benefit drivers. The “average” citizen has today few ways to learn or benefit from historical data about road safety. However, as better navigation tools and even self-driving cars become available, analysis of historical data may not only improve travel times, but might also be used to improve travel safety through the choice of driving routes, driving time, or avoiding certain road conditions.</p>
 <p>This article seeks to understand whether twitter data can be used for this purpose and to develop a predictive machine learning algorithm.</p>
 <p>Analysis focuses on a specific location, US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79) of Oregon. As the main route from the Central Oregon city of Bend to the Willamette Valley cities of Portland, Eugene, and Salem, Highway20 has high traffic year round and is the site of <a href="http://www.nuggetnews.com/archives/960717/front1.shtml">frequent</a> accidents.</p>
 <p>This analysis use historical data from Twitter to understand the correlation of accidents on this specific section of road to reported snowy road conditions.</p>
@@ -73,74 +73,79 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <div id="getting-the-tweets" class="section level3">
 <h3>Getting the Tweets</h3>
 <p>The twitter feed for this analysis is downloaded by a separate R program (Since I could not get RStudio to allow me to enter the required security features during runtime execution). The data are stored as a .csv of Tweets locally.</p>
-<pre><code>## [1] 2014-11-16 2014-11-16 2014-11-15 2014-11-15 2014-11-15
-## 482 Levels: 2012-11-01 2012-11-02 2012-11-09 2012-11-10 ... 2014-11-16</code></pre>
-<p>The data analyzed cover the dates from 2012-11-01 to 2014-11-16. There are 1500 tweets during this period.</p>
+<p>The data analyzed cover the dates from 2012-02-26 to 2014-12-08. There are 2000 tweets during this period.</p>
 </div>
 <div id="data-cleaning" class="section level3">
 <h3>Data cleaning</h3>
 <p>Data are cleaned by searching the text for the strings “crash” and “snow” and then filtered for location “Santiam Pass Summit”. A few tweets are shown below.</p>
-<pre><code>## [1] US20, 5 Mi W of Santiam Pass Summit, Delay &amp;lt; 20min, A crash has occurred, use caution.... http://t.co/DMWclKXX45                           
-## [2] US20, 2 Mi E of Santiam Pass Summit, Delay &amp;lt; 20min, A crash has occurred, use caution.... http://t.co/MmrvAziAIN                           
-## [3] US20, from 2 Mi W of Santiam Pass Summit to 1 Mi W of @ Suttle Lake Loop, Delay &amp;lt; 20min, A crash has occurred, us... http://t.co/nGBz21C5S4
-## [4] US20, 3 Mi W of Santiam Pass Summit, Delay &amp;lt; 20min, A crash has occurred, use caution.... http://t.co/Hs92dVw2oN                           
-## [5] US20, 2 Mi W of Santiam Pass Summit, Delay &amp;lt; 20min, A crash has occurred, use caution.... http://t.co/FV4JyanBWm                           
-## [6] US20, 1 Mi W of Santiam Pass Summit, Delay &amp;lt; 20min, A crash has occurred, use caution.... http://t.co/LCWmyboAEA                           
-## 902 Levels: ORE126, @ Clear Lake - Belnap Springs Hwy OR126, Delay &amp;lt; 20min, A crash has occurred, use caution.... http://t.co/e38poXEA ...</code></pre>
-<pre><code>## [1] US20, tombstone, Slush or snow pack, Carry chains/Traction tires... http://t.co/6K2PHCIHJG       
-## [2] US20, tombstone, Packed snow, Carry chains/Traction tires... http://t.co/6K2PHCIHJG              
-## [3] US20, tombstone, Slush or snow pack, Carry chains/Traction tires... http://t.co/6K2PHCIHJG       
-## [4] US20, santiam pass smt, Slush or snow pack, Carry chains/Traction tires... http://t.co/lNAu3KkGmp
-## [5] US20, tombstone, Slush or snow pack, Carry chains/Traction tires... http://t.co/6K2PHCIHJG       
+<pre><code>## [1] ORE126, 7 Mi W of Santiam Pass Summit, Delay &amp;lt; 20min, A crash has occurred, use caution.... http://t.co/cm4MXRuAVl
+## [2] US20, 3 Mi W of Santiam Pass Summit, Delay &amp;lt; 20min, A crash has occurred, use caution.... http://t.co/qg2RnugLXW  
+## [3] US20, 2 Mi W of Santiam Pass Summit, Delay &amp;lt; 20min, A crash has occurred, use caution.... http://t.co/gT8nGJtzAW  
+## [4] US20, 2 Mi W of Santiam Pass Summit, Delay &amp;lt; 20min, A crash has occurred, use caution.... http://t.co/dhZ668neKe  
+## [5] US20, 3 Mi E of Santiam Pass Summit, Delay &amp;lt; 20min, A crash has occurred, use caution.... http://t.co/FjFdSEr1xX  
+## [6] US20, 5 Mi W of Santiam Pass Summit, Delay &amp;lt; 20min, A crash has occurred, use caution.... http://t.co/DMWclKXX45  
+## 1218 Levels: ORE126, @ Clear Lake - Belnap Springs Hwy OR126, Delay &amp;lt; 20min, A crash has occurred, use caution.... http://t.co/e38poXEA ...</code></pre>
+<pre><code>## [1] US20, santiam pass smt, Slush or snow pack, Carry chains/Traction tires... http://t.co/OQoyGwrVEz
+## [2] US20, santiam pass smt, Packed snow, Carry chains/Traction tires... http://t.co/OQoyGwrVEz       
+## [3] US20, tombstone, Packed snow, Carry chains/Traction tires... http://t.co/6K2PHCZKLG              
+## [4] US20, santiam pass smt, Slush or snow pack, Carry chains/Traction tires... http://t.co/QB3jJWqu4v
+## [5] US20, santiam pass smt, Slush or snow pack, Carry chains/Traction tires... http://t.co/lNAu3KkGmp
 ## [6] US20, santiam pass smt, Slush or snow pack, Carry chains/Traction tires... http://t.co/lNAu3KkGmp
-## 902 Levels: ORE126, @ Clear Lake - Belnap Springs Hwy OR126, Delay &amp;lt; 20min, A crash has occurred, use caution.... http://t.co/e38poXEA ...</code></pre>
+## 1218 Levels: ORE126, @ Clear Lake - Belnap Springs Hwy OR126, Delay &amp;lt; 20min, A crash has occurred, use caution.... http://t.co/e38poXEA ...</code></pre>
 </div>
 <div id="data-analysis-and-reduction" class="section level3">
 <h3>Data analysis and reduction</h3>
-<p>To analyze the data create a dataframe of dates from 2014-11-16 to 2012-11-01 and then add two binary columns, one for whether a crash occured that day and whether snow was reported on the road. A few rows of the dataframe are shown.</p>
+<p>To analyze the data create a dataframe of dates from 2014-12-08 to 2012-02-26 and then add two binary columns, one for whether a crash occured that day and whether snow was reported on the road. A few rows of the dataframe are shown.</p>
 <pre><code>##           date Accident  Snow   weekday
-## 540 2013-05-26    FALSE FALSE    Sunday
-## 541 2013-05-25    FALSE FALSE  Saturday
-## 542 2013-05-24     TRUE FALSE    Friday
-## 543 2013-05-23    FALSE  TRUE  Thursday
-## 544 2013-05-22     TRUE  TRUE Wednesday
-## 545 2013-05-21    FALSE  TRUE   Tuesday
-## 546 2013-05-20     TRUE FALSE    Monday
-## 547 2013-05-19    FALSE FALSE    Sunday
-## 548 2013-05-18    FALSE FALSE  Saturday
-## 549 2013-05-17     TRUE FALSE    Friday
-## 550 2013-05-16    FALSE FALSE  Thursday</code></pre>
+## 600 2013-04-18    FALSE FALSE  Thursday
+## 601 2013-04-17     TRUE FALSE Wednesday
+## 602 2013-04-16     TRUE  TRUE   Tuesday
+## 603 2013-04-15     TRUE  TRUE    Monday
+## 604 2013-04-14    FALSE  TRUE    Sunday
+## 605 2013-04-13     TRUE  TRUE  Saturday
+## 606 2013-04-12    FALSE FALSE    Friday
+## 607 2013-04-11    FALSE FALSE  Thursday
+## 608 2013-04-10    FALSE FALSE Wednesday
+## 609 2013-04-09    FALSE FALSE   Tuesday
+## 610 2013-04-08     TRUE  TRUE    Monday
+## 611 2013-04-07     TRUE  TRUE    Sunday
+## 612 2013-04-06    FALSE  TRUE  Saturday
+## 613 2013-04-05     TRUE FALSE    Friday
+## 614 2013-04-04    FALSE FALSE  Thursday
+## 615 2013-04-03    FALSE FALSE Wednesday</code></pre>
 <pre><code>## Waiting for profiling to be done...</code></pre>
-<p>Per this analysis in a period of 746 days there were:<br />• 99 accidents<br />• 181 days with snow<br />• 53 days with snow and accidents</p>
+<p>Per this analysis in a period of 1017 days there were:<br />• 125 accidents<br />• 243 days with snow<br />• 69 days with snow and accidents</p>
 </div>
 <div id="probability-analysis" class="section level3">
 <h3>Probability analysis</h3>
-<p>The specific rates can be derived from above:<br />p<sub>Acc</sub> = 0.133 per day.<br />p<sub>Snow</sub> = 0.243 per day.<br />p<sub>SnowAcc</sub> = 0.071 per day.</p>
+<p>The specific rates can be derived from above:<br />p<sub>Acc</sub> = 0.123 per day.<br />p<sub>Snow</sub> = 0.239 per day.<br />p<sub>SnowAcc</sub> = 0.068 per day.</p>
 <p>From these the conditional probabilities can be derived.</p>
-<p>p(Acc|Snow) = p<sub>SnowAcc</sub> / p<sub>Snow</sub> = 0.293</p>
+<p>p(Acc|Snow) = p<sub>SnowAcc</sub> / p<sub>Snow</sub> = 0.284</p>
 <p>and</p>
-<p>p(Snow|Acc) = p<sub>SnowAcc</sub> / p<sub>Acc</sub> = 0.535</p>
-<p>Hence, the odds that if an accident occurs on Santiam pass snow was reported is 1.2:1, which is are slightly higher than even.</p>
+<p>p(Snow|Acc) = p<sub>SnowAcc</sub> / p<sub>Acc</sub> = 0.552</p>
+<p>Hence, the odds that an accident occurs on Santiam pass if snow is reported is 0.4:1, which are about half.</p>
 <p>The probability an accident occured given there was no snow is</p>
-<p>p(Acc|<span style="text-decoration: overline">Snow</span>) = (p<sub>Acc</sub> - p(Acc|Snow))/(1 - p<sub>Snow</sub>) = 0.08</p>
-<p>which implies odd of 0.087:1 or one about one chance in 12.</p>
+<p>p(Acc|<span style="text-decoration: overline">Snow</span>) = (p<sub>Acc</sub> - p(Acc|Snow))/(1 - p<sub>Snow</sub>) = 0.07</p>
+<p>which implies odd of 0.075:1 or one about one chance in 13.</p>
+<p>This implies and odd ratio of 6.09</p>
 </div>
 <div id="logistic-regression" class="section level3">
 <h3>Logistic Regression</h3>
+<p>We can check that by doing logisitc regression.</p>
 </div>
 <div id="odd-ratios-for-the-model" class="section level3">
 <h3>Odd ratios for the model</h3>
 <pre><code>## Waiting for profiling to be done...</code></pre>
 <pre><code>##                         OR      2.5 %    97.5 %
-## (Intercept)      0.1972874 0.11768483 0.3174726
-## SnowTRUE         5.0630543 3.22158879 8.0158103
-## weekdayMonday    0.3748842 0.16888311 0.7986035
-## weekdaySaturday  0.6625148 0.32628264 1.3284446
-## weekdaySunday    0.3586170 0.16138467 0.7644407
-## weekdayThursday  0.2771011 0.11643602 0.6172012
-## weekdayTuesday   0.3247345 0.14040744 0.7103127
-## weekdayWednesday 0.2048529 0.07620098 0.4906630</code></pre>
-<p>Hence according to the regression model 5.06 is the increase in odds from no snow to snow.</p>
+## (Intercept)      0.1753422 0.11107148 0.2677457
+## SnowTRUE         5.5856164 3.74360722 8.3907602
+## weekdayMonday    0.4125348 0.20815357 0.7955898
+## weekdaySaturday  0.6196853 0.32906140 1.1526989
+## weekdaySunday    0.3843254 0.19170339 0.7471584
+## weekdayThursday  0.2234726 0.10002642 0.4672839
+## weekdayTuesday   0.3248294 0.15541440 0.6497436
+## weekdayWednesday 0.1982715 0.08352421 0.4304081</code></pre>
+<p>Hence according to the regression model 5.59 is the increase in odds from no snow to snow.</p>
 <p>Need to think about this one a bit…</p>
 </div>
 <div id="conclusions" class="section level3">

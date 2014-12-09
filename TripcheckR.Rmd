@@ -34,7 +34,7 @@ library(RCurl)
 
         if (getwd()=="/Users/winstonsaunders/Documents") {setwd("TripcheckR")}
         if (getwd()!="/Users/winstonsaunders/Documents/TripcheckR") {setwd("/Users/winstonsaunders/Documents/TripcheckR")}
-        file_name <- "TripCheckUS20B"
+        file_name <- "TripCheckUS20B_N"
 
         hwy_df<-read.csv(paste0(file_name, ".csv"))
 
