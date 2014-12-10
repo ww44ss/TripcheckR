@@ -54,6 +54,25 @@ library(RCurl)
         ##make an "hour" column (for time of day)
         hwy_df$hour<-as.POSIXlt(hwy_df$created)$hour
 
+        hwy_df$chronsecs<-as.numeric(as.POSIXlt(hwy_df$created))
+        
+        hwy_df$chronsecs[1:10]
+
+```
+
+```{r}
+
+        ##Create column with delta of seconds between rows
+        
+        require(dplyr)
+        hwy_df<-mutate(hwy_df, hourdelta = -1*(chronsecs - lag(chronsecs, default = chronsecs[1]))/3600)
+
+        hwy_df$hourdelta[1:10]
+        tail(hwy_df$hourdelta)
+        
+        
+
+
         ### capture start adn edn times of period 
         tEnd <- as.Date(hwy_df$created)[length(hwy_df$created)]
         tStart <- as.Date(hwy_df$created[1])

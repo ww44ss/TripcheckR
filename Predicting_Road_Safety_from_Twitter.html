@@ -76,6 +76,32 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 </div>
 <div id="data-cleaning" class="section level2">
 <h2>Data Cleaning</h2>
+<pre><code>##  [1] 1418034473 1417917007 1417905473 1417782592 1417763517 1417754274
+##  [7] 1417746112 1417745873 1417727032 1417723689</code></pre>
+<pre class="r"><code>        ##Create column with delta of seconds between rows
+        
+        require(dplyr)</code></pre>
+<pre><code>## Loading required package: dplyr
+## 
+## Attaching package: 'dplyr'
+## 
+## The following object is masked from 'package:stats':
+## 
+##     filter
+## 
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>        hwy_df&lt;-mutate(hwy_df, hourdelta = -1*(chronsecs - lag(chronsecs, default = chronsecs[1]))/3600)
+
+        hwy_df$hourdelta[1:10]</code></pre>
+<pre><code>##  [1]  0.00000000 32.62944444  3.20388889 34.13361111  5.29861111
+##  [6]  2.56750000  2.26722222  0.06638889  5.23361111  0.92861111</code></pre>
+<pre class="r"><code>        tail(hwy_df$hourdelta)</code></pre>
+<pre><code>## [1] 3.2680556 2.5000000 0.2983333 0.5680556 5.9000000 7.4002778</code></pre>
+<pre class="r"><code>        ### capture start adn edn times of period 
+        tEnd &lt;- as.Date(hwy_df$created)[length(hwy_df$created)]
+        tStart &lt;- as.Date(hwy_df$created[1])</code></pre>
 <p>The data analyzed cover the dates from 2012-02-26 to 2014-12-08. There are 2000 tweets during this period.</p>
 <p>Data are cleaned by searching the text for the strings “crash” and “snow” and then filtered for location “Santiam Pass Summit”. A few tweets are shown below.</p>
 </div>
