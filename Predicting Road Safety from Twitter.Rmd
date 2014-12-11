@@ -49,17 +49,34 @@ library(RCurl)
 ##Data Cleaning
 
 ```{r echo=FALSE}
+
+
+        ##keep only columns of interest
+        hwy_df<-hwy_df[,c("created", "text")]
+        ##display sample of raw data
+        head(hwy_df)
+
         ##make the date column a date
         hwy_df$date<-as.Date(hwy_df$created)
         ##make an "hour" column (for time of day)
         hwy_df$hour<-as.POSIXlt(hwy_df$created)$hour
 
         hwy_df$chronsecs<-as.numeric(as.POSIXlt(hwy_df$created))
+
+        ##Include Time Period (1 = "morning", 2 = "midday", 3 = "evening", 4 = "night")
+
+        hwy_df$dayperiod<-NA
+        hwy_df$dayperiod[hwy_df$hour>=3 & hwy_df$hour<9]<-1
+        hwy_df$dayperiod[hwy_df$hour>=9 & hwy_df$hour<15]<-2
+        hwy_df$dayperiod[hwy_df$hour>=15 & hwy_df$hour<21]<-3
+        hwy_df$dayperiod[hwy_df$hour>=19]<-4
+        hwy_df$dayperiod[hwy_df$hour<3]<-4
         
-        hwy_df$chronsecs[1:10]
 
+head(hwy_df)
+        
 
-        ### capture start adn edn times of period 
+        ### capture start and edn times of period 
         tEnd <- as.Date(hwy_df$created)[length(hwy_df$created)]
         tStart <- as.Date(hwy_df$created[1])
         
@@ -68,7 +85,8 @@ library(RCurl)
 
 The data analyzed cover the dates from `r tEnd` to `r tStart`. There are `r dim(hwy_df)[1]` tweets during this period. 
 
-Data are cleaned by searching the text for the strings "crash" and "snow" and then filtered for location "Santiam Pass Summit". A few tweets are shown below.
+Data are cleaned by searching the text for the strings "crash" and "snow" and then filtered for location "Santiam Pass Summit". A few instances of cleaned and engineered date are shown above.
+
 
 ## Data Analysis
 
@@ -137,6 +155,14 @@ Data are cleaned by searching the text for the strings "crash" and "snow" and th
                 substring(hwy_df$text,1,90)[30:35] 
                 substring(hwy_snow$text,1,60)[15:20]
 
+hist(hwy_snow$hour, breaks = 24, col="lightblue")
+
+hist(hwy_crash$hour, breaks = 24, col="lightblue")
+
+hist(hwy_df$hour, breaks = 24, col="lightblue")
+
+hist(hwy_df$dayperiod, breaks = 24, col="lightblue")
+
 ```
 
 ###Data analysis and reduction
@@ -166,10 +192,17 @@ To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and 
         ##add weekday
 
         datecortab$weekday<-weekdays(as.Date(datecortab$date, "1970-01-01"))
+        datecortab$weekday<-as.factor(datecortab$weekday)
 
+        ##Add Feature for Friday or Saturday
+        datecortab$wkend<-rep(FALSE, length(Tvect))
+        datecortab$wkend[datecortab$weekday=="Friday"|datecortab$weekday=="Saturday"] <- TRUE
+        datecortab$wkend<-as.numeric(datecortab$wkend)
                 
 
 ```
+
+####Weekend
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE}
         #convert date column to date   
@@ -178,6 +211,18 @@ To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and 
         ##Find dates when crashes and snow occur and assign to columns
         datecortab$Accident <- datecortab$date%in%hwy_df$date
         datecortab$Snow <- datecortab$date%in%hwy_snow$date
+
+        datecortab$Accident <- as.numeric(datecortab$Accident)
+        datecortab$Snow <- as.numeric(datecortab$Snow)
+
+        ##Look at distribution of snow days
+        table(datecortab$weekday[datecortab$Accident==1])
+
+```
+
+####Model features
+
+```{r echo=FALSE, message=FALSE}
         
         ##create small table to print
                 xx<-datecortab
@@ -189,7 +234,7 @@ To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and 
 
 
 ```{r, echo=FALSE}        
-        f<-glm(Accident~Snow+weekday, family=binomial, datecortab)
+        f<-glm(Accident~Snow+wkend, family=binomial, datecortab)
 
 
         Gamma <- exp(coef(f))
@@ -271,17 +316,10 @@ To look for correations with time of day need to simplify data to include only d
 ```{r}
 require(ggplot2)
 
-p1 <- ggplot(hwy_df, aes(date,hour)) + geom_point(color= "red")
-
-p1  
-
-
 hist(hwy_df$hour, breaks = 24, col="lightblue")
 
-
-tt<-hwy_df[hwy_df$hour<2|hwy_df$hour>22,]
-
-tt[1:20, c("created", "text", "hour", "hourdelta")]
+#tt<-hwy_df[hwy_df$hour<2|hwy_df$hour>4,]
+#tt[1:30, c("created", "text", "hour", "hourdelta")]
 
 ```
   
