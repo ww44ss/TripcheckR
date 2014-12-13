@@ -229,11 +229,14 @@ To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and 
                 xx$date<-as.Date(xx$date, "1970-01-01")
                 xx[600:615,]
 
-        ##do fit
+      
 ```
 
 
-```{r, echo=FALSE}        
+```{r, echo=FALSE} 
+        
+        ##Fit the data
+
         f<-glm(Accident~Snow+wkend, family=binomial, datecortab)
 
 
