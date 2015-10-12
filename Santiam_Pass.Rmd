@@ -17,7 +17,7 @@ output: html_document
 ## Get the relevnat tweet data
 
         if (getwd()=="/Users/winstonsaunders/Documents") {setwd("TripcheckR")}
-        file_name <- "TripCheckUS20B"
+        file_name <- "TripCheckUS20B_Sep15"
 
         hwy_df<-read.csv(paste0(file_name, ".csv"))
 

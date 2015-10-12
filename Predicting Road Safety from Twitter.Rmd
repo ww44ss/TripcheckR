@@ -39,7 +39,7 @@ library(RCurl)
 
         if (getwd()=="/Users/winstonsaunders/Documents") {setwd("TripcheckR")}
         if (getwd()!="/Users/winstonsaunders/Documents/TripcheckR") {setwd("/Users/winstonsaunders/Documents/TripcheckR")}
-        file_name <- "TripCheckUS20B_N"
+        file_name <- "TripCheckUS20B_Sep15"
 
         hwy_df<-read.csv(paste0(file_name, ".csv"))
 
@@ -54,26 +54,39 @@ library(RCurl)
         ##keep only columns of interest
         hwy_df<-hwy_df[,c("created", "text")]
         ##display sample of raw data
-        head(hwy_df)
+        #head(hwy_df)
+        
+        hwy_df$created<-as.character(hwy_df$created)
+        hwy_df$text<-as.character(hwy_df$text)
 
         ##make the date column a date
         hwy_df$date<-as.Date(hwy_df$created)
-        ##make an "hour" column (for time of day)
-        hwy_df$hour<-as.POSIXlt(hwy_df$created)$hour
-
-        hwy_df$chronsecs<-as.numeric(as.POSIXlt(hwy_df$created))
-
-        ##Include Time Period (1 = "morning", 2 = "midday", 3 = "evening", 4 = "night")
-
-        hwy_df$dayperiod<-NA
-        hwy_df$dayperiod[hwy_df$hour>=3 & hwy_df$hour<9]<-1
-        hwy_df$dayperiod[hwy_df$hour>=9 & hwy_df$hour<15]<-2
-        hwy_df$dayperiod[hwy_df$hour>=15 & hwy_df$hour<21]<-3
-        hwy_df$dayperiod[hwy_df$hour>=19]<-4
-        hwy_df$dayperiod[hwy_df$hour<3]<-4
+        ## create pacific time column
+        hwy_df$PDT<-as.POSIXct(hwy_df$created, tz="UTC")
+        ## convert to Pacific time
+        attributes(hwy_df$PDT)$tzone<-"US/Pacific"
         
+        ##make an "hour" column (for time of day)
+        library(lubridate)
+        t.lub <- ymd_hms(hwy_df$PDT)
+        hwy_df$hour <- hour(t.lub) + minute(t.lub)/60
+        
+        ## make a seconds column
+        hwy_df$chronsecs<-as.numeric(as.POSIXlt(hwy_df$PDT))
 
-head(hwy_df)
+        
+        ## create "dayperiod"
+        hwy_df$dayperiod<-NA
+        hwy_df$dayperiod[hwy_df$hour>=3 & hwy_df$hour<9]<-"morning"
+        hwy_df$dayperiod[hwy_df$hour>=9 & hwy_df$hour<15]<-"midday"
+        hwy_df$dayperiod[hwy_df$hour>=15 & hwy_df$hour<21]<-"evening"
+        hwy_df$dayperiod[hwy_df$hour>=19]<-"night"
+        hwy_df$dayperiod[hwy_df$hour<3]<-"night"
+        
+        ## make a factor
+        hwy_df$dayperiod<-as.factor(hwy_df$dayperiod)
+        #head(hwy_df)
+        
         
 
         ### capture start and edn times of period 
@@ -93,75 +106,75 @@ Data are cleaned by searching the text for the strings "crash" and "snow" and th
 ```{r "clean", echo=FALSE, warning=FALSE, message=FALSE}
 
 
-        incident <- "crash"
-        metaincident <- "snow"
-
-        ## get tweets with indicent or metaincident
-        #hwy_snow<-hwy_df[grep(incident, hwy_df$text)|grep(metaincident, hwy_df$text),]
-        #hwy_snow<-hwy_snow[!duplicated(hwy_snow$created),]
-
-
-        ##Get Crashes
-        hwy_crash <-hwy_df[grep("crash", hwy_df$text),]
+        trip_incident_filter <- function(data_df, incident = "crash"){
+        ##FUNCTION filtering text of tweets for incidents 
+            ##accepts data frame requiring:
+            ## text field to search
+            
+            ## returns:
+            ## fitered data with added column called hourdelta (in hours)
 
 
-        ##Create to ensure no duplicates filter crash reports less than 3 hours from previous
-        
-        require(dplyr)
-        hwy_crash<-mutate(hwy_crash, hourdelta = -1*(chronsecs - lag(chronsecs, default = chronsecs[1]))/3600)
+            ##filter incidencts
+            hwy_inc <-data_df[grep(tolower(incident), tolower(data_df$text)),]
 
-        hwy_crash<-hwy_crash[hwy_crash$hourdelta>3,]
-        
-        ##Total crashes reported by twitter feed for all of hwy 20
-        TotalCrashes <- dim(hwy_crash)[1]
-
-        
-        ## get tweets with snow reported anywhere on hwy 20
-        hwy_snow <-hwy_df[grep("snow", hwy_df$text),]
-        ## dedupe
-        hwy_snow<-hwy_snow[!duplicated(hwy_snow$date),]
-
-        ##hw_df2 has just rows with "snow"
-
-
-        ##refine location to santiam pass for crashes
-        location <- "Santiam Pass Summit"
-        ##Get tweets with at location
-        hwy_df <-hwy_df[grep(location, hwy_df$text),]
-
-        ## get tweets with "crash"
-        hwy_df <-hwy_df[grep("crash", hwy_df$text),]
-
-        ##dedupe data
-        ##Create column with delta of seconds between rows
-        
-      
-        hwy_df<-mutate(hwy_df, hourdelta = -1*(chronsecs - lag(chronsecs, default = chronsecs[1]))/3600)
-
-        ##pick three hours as cutoff
-        hwy_df<-hwy_df[hwy_df$hourdelta >6, ]
+            return(hwy_inc)
+            }
+            
+        inc_dedupe <- function(hwy_inc){
+            ## reduce duplicates
+            ## add column hourdelta to df
+            ## uses chronsecs
+                ## reverse oder
+                hwy_inc <- hwy_inc[rev(rownames(hwy_inc)),]
+    
+                ## compute time difference between entries
+                hwy_inc$hourdelta<-c((3*3600+1),diff(hwy_inc$chronsecs, lag=1))/3600
         
         
-
+                
+                hwy_inc<-hwy_inc[hwy_inc$hourdelta>3, ]
+                
+                hwy_inc <- hwy_inc[rev(rownames(hwy_inc)),]
+                
+                
+                return(hwy_inc)
+                }       
         
-        ### hwy_df now contained events concerning crashes at Santiam Summit
 
+        ##Filter
+        
+        
+        hwy_crash<-trip_incident_filter(hwy_df, "crash")
+        hwy_snow<-trip_incident_filter(hwy_df, "snow")
+        
+        hwy_crash_santiam<-trip_incident_filter(hwy_crash, "santiam")
+        
+        hwy_crash_santiam<-inc_dedupe(hwy_crash_santiam)
+        
+        
+        library(ggplot2)
+        
+        p <- ggplot(hwy_crash_santiam, aes(x = hour)) + geom_histogram(fill="salmon", color="darkred", binwidth=1)
+        p <- p + theme_bw()
+        p <- p + ggtitle("Accidents on Santiam")
+        print(p)
+        
+        p <- ggplot(hwy_crash, aes(x = hour)) + geom_histogram(fill="blue", color="darkblue", binwidth=0.5)
+        p <- p + theme_bw()
+        p <- p + ggtitle("All Hwy20 Crashes")
+        print(p)
+        
+    
         ##Numbers of accidents adn snow for later use
 
-        nAcc <- dim(hwy_df)[1]
-        nSnow <- dim(hwy_snow)[1]
+        nAcc <- nrow(hwy_crash)
+        nSnow <- nrow(hwy_snow)
+        
+        #nAcc_santiam <- nrow(hwy_crash_santiam)
+        #nSnow_santiam <- nrow(hwy_snow_santiam)
 
-        ##display some lines
-                substring(hwy_df$text,1,90)[30:35] 
-                substring(hwy_snow$text,1,60)[15:20]
-
-hist(hwy_snow$hour, breaks = 24, col="lightblue")
-
-hist(hwy_crash$hour, breaks = 24, col="lightblue")
-
-hist(hwy_df$hour, breaks = 24, col="lightblue")
-
-hist(hwy_df$dayperiod, breaks = 24, col="lightblue")
+   
 
 ```
 
@@ -172,171 +185,181 @@ To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and 
 
 ```{r, echo=FALSE}
 
+    snow_days<-hwy_snow$date
         
+    hwy_crash_santiam$snow_day <- (hwy_crash_santiam$date %in% snow_days)
+    hwy_crash_santiam$weekday <- weekdays(as.Date(hwy_crash_santiam$date, "1970-01-01"))
 
-        ##CREATE BINARY DATA FRAME        
+
+```
+
+```{r, echo=FALSE}
+    
+    
+    ##CREATE TREE ANALYSIS DATA FRAME  
+    
+    ## create a list of all dates
+    tStart <- hwy_df$date[1]
+    tEnd <- hwy_df$date[nrow(hwy_df)]
 
         ##Start with dates
         Tvect<-tStart:tEnd
-        #date<-as.Date(Tvect, "1970-01-01")
-        date<-Tvect
-        #Create dummy vectors for Accident and Snow
-        Accident <- rep(TRUE, length(Tvect))
-        Snow <- rep(TRUE, length(Tvect))
+        date<-as.Date(Tvect, "1970-01-01")
+    
+    Analysis_df<-as.data.frame(date)
+    
+    #head(Analysis_df)
+    
+    Analysis_df$crash <- (Analysis_df$date %in% hwy_crash_santiam$date)
+    
+    #Analysis_df$crash[Analysis_df$crash==TRUE]<-"crash"
+    #Analysis_df$crash[ Analysis_df$crash==FALSE]<-"safe"
+    #Analysis_df$crash<-as.character(Analysis_df$crash)
+    #Analysis_df$crash<-as.factor(Analysis_df$crash)
+    
+    
+    Analysis_df$snow <- (Analysis_df$date %in% hwy_snow$date)
+    
+    Analysis_df$snow[Analysis_df$snow==TRUE]<-"snow"
+    Analysis_df$snow [Analysis_df$snow ==FALSE]<-"clear"
+    Analysis_df$snow <-as.character(Analysis_df$snow )
+    Analysis_df$snow <- as.factor(Analysis_df$snow )
+    
+    
+    Analysis_df$weekday <- weekdays(as.Date(Analysis_df$date, "1970-01-01"))
+    
+    ##Holidays
+        library(timeDate)
+        holidays_list = holidayNYSE(2005:2015)
+        holidays_df<-as.Date(holidays_list)
+    Analysis_df$holiday <-  (Analysis_df$date %in% holidays_df)
+    
+    
+    
+    ## assign label
+    #Analysis_df$holiday[Analysis_df$holiday == TRUE] <- "holiday"
+    #Analysis_df$holiday[Analysis_df$holiday == FALSE] <- "nonholiday"
+    #Analysis_df$holiday<-as.factor(Analysis_df$holiday)
+    
+    print(head(Analysis_df, 50))
+    
+    ## Add weekend
+    Analysis_df$weekend <- Analysis_df$weekday == "Sunday" | Analysis_df$weekday == "Saturday"
 
-        ##build date frame
-        datecortab<-cbind(date, Accident, Snow)
+    
+    ## Long Weekend
+    Analysis_df$longweekend<-rep(FALSE, nrow(Analysis_df))
+    
+    for (i in 3:(length(Analysis_df$date-3))) {
+        ## Mondays
+        if (Analysis_df[i, "weekday"] == "Monday" & Analysis_df[i,"holiday"] == TRUE){
+            Analysis_df[i, "longweekend"] <- TRUE
+            Analysis_df[i+1, "longweekend"] <- TRUE
+            Analysis_df[i+2, "longweekend"] <- TRUE
+            
+        }
         
-        datecortab<-as.data.frame(datecortab)
-
-        ##add weekday
-
-        datecortab$weekday<-weekdays(as.Date(datecortab$date, "1970-01-01"))
-        datecortab$weekday<-as.factor(datecortab$weekday)
-
-        ##Add Feature for Friday or Saturday
-        datecortab$wkend<-rep(FALSE, length(Tvect))
-        datecortab$wkend[datecortab$weekday=="Friday"|datecortab$weekday=="Saturday"] <- TRUE
-        datecortab$wkend<-as.numeric(datecortab$wkend)
-                
-
-```
-
-####Weekend
-
-```{r, echo=FALSE, warning=FALSE, message=FALSE}
-        #convert date column to date   
-        #datecortab$date<-as.Date(datecortab$date, "1970-01-01")
-
-        ##Find dates when crashes and snow occur and assign to columns
-        datecortab$Accident <- datecortab$date%in%hwy_df$date
-        datecortab$Snow <- datecortab$date%in%hwy_snow$date
-
-        datecortab$Accident <- as.numeric(datecortab$Accident)
-        datecortab$Snow <- as.numeric(datecortab$Snow)
-
-        ##Look at distribution of snow days
-        table(datecortab$weekday[datecortab$Accident==1])
-
-```
-
-####Model features
-
-```{r echo=FALSE, message=FALSE}
+        ## Fridays
+        if (Analysis_df[i, "weekday"] == "Friday" & Analysis_df[i, "holiday"] == TRUE){
+            Analysis_df[i, "longweekend"] <- TRUE
+            Analysis_df[i-1, "longweekend"] <- TRUE
+            Analysis_df[i-2, "longweekend"] <- TRUE
+            
+        }
         
-        ##create small table to print
-                xx<-datecortab
-                xx$date<-as.Date(xx$date, "1970-01-01")
-                xx[600:615,]
-
-      
+        ## Thursdays
+        if (Analysis_df[i, "weekday"] == "Thursday" & Analysis_df[i, "holiday"] == TRUE){
+            Analysis_df[i, "longweekend"] <- TRUE
+            Analysis_df[i-1, "longweekend"] <- TRUE
+            Analysis_df[i-2, "longweekend"] <- TRUE
+            Analysis_df[i-2, "longweekend"] <- TRUE
+            
+        }
+        
+    }
+     
+    Analysis_df$weekday<-as.factor(Analysis_df$weekday)
+    
+    
 ```
 
 
-```{r, echo=FALSE} 
+
+
+
+
+```{r, echo=FALSE, fig.height=5, fig.width=9} 
         
         ##Fit the data
-
-        f<-glm(Accident~Snow+wkend, family=binomial, datecortab)
-
-
-        Gamma <- exp(coef(f))
-
-        ConfInt<- exp(confint(f))
-
-        x<-datecortab$Snow&datecortab$Accident
     
-   
+         ## get rid of holiday classifier
+        Analysis_df_t<- subset(Analysis_df, select = -holiday )
 
-        nAccSnow<-table(x)
+        library(rpart)
+        library(rpart.plot)
+        treefit<-rpart(crash~snow+weekday+longweekend+holiday, Analysis_df, method="class", control=rpart.control(minsplit=5, cp=0, xval=5))
         
 
+        prp(treefit, uniform=TRUE, main="Classification Tree for Crashes",type=0, extra=2, faclen=0)
+        #text(treefit, use.n=TRUE, all=TRUE, cex=.7)
+        
+        treefit
 ```
 
 
-Per this analysis in a period of `r dim(datecortab)[1]` days there were:    
-• `r nAcc` accidents   
-• `r nSnow` days with snow  
-• `r nAccSnow[2]` days with snow and accidents  
+<style>
 
-###Estimating Probabilities  
+table { 
+    display: table;
+    border-collapse: collapse;
+    border-spacing: 10px;
+    border-color: gray;
+    background-color: #a1b2c3;
+    align: center;
+    font: 12px arial, sans-serif;
+}
+th, td {
+    border: 2px solid black;
+    padding: 5px;
+    text-align: center;
+}
+</style>
 
-The specific rates can be derived from above:  
-p<sub>Acc</sub> = `r round(nAcc/dim(datecortab)[1],3)` per day.   
-p<sub>Snow</sub> = `r round(nSnow/dim(datecortab)[1],3)` per day.  
-p<sub>SnowAcc</sub> = `r round(nAccSnow[2]/(dim(datecortab)[1]),3)` per day.  
 
-From these the conditional probabilities can be derived.  
-
-```{r, echo=FALSE}
-probaccgivensnow <- round((nAccSnow[2]/(dim(datecortab)[1]))/(nSnow/dim(datecortab)[1]),3)
-probsnowgivenacc <- round((nAccSnow[2]/(dim(datecortab)[1]))/(nAcc/dim(datecortab)[1]),3)
-
-probaccnosnow <- (nAcc/dim(datecortab)[1] - nAccSnow[2]/(dim(datecortab)[1]))/(1-nSnow/dim(datecortab)[1])
-probaccnosnow <- round(probaccnosnow, 2)
-                                                                               
-```
-
-p(Acc|Snow) = p<sub>SnowAcc</sub> / p<sub>Snow</sub> = `r probaccgivensnow`
-
-and  
-
-p(Snow|Acc) = p<sub>SnowAcc</sub> / p<sub>Acc</sub> = `r probsnowgivenacc`  
-
-Hence, the odds that an accident occurs on Santiam pass if snow is reported is `r round(probaccgivensnow/(1-probaccgivensnow),2)`:1, which are about half. 
-
-The probability an accident occured given there was no snow is  
-
-p(Acc|<span style="text-decoration: overline">Snow</span>) = (p<sub>Acc</sub> - p(Acc|Snow))/(1 - p<sub>Snow</sub>) = `r probaccnosnow`
-
-which implies odd of `r round(probaccnosnow/(1-probaccnosnow),3)`:1 or one about one chance in `r round((1-probaccnosnow)/probaccnosnow, 0)`.
-
-This implies and odd ratio of `r round((probaccgivensnow/(1-probaccgivensnow))/probaccnosnow/(1-probaccnosnow),2)`
-
-###Logistic Regression
-
-We can use logistic regression to check odds 
-
-###Odd ratios for the model
-
-```{r, echo = FALSE}
-
-a <- exp(cbind(OR = coef(f), confint(f)))
-
-a
-
+```{r, echo=FALSE, results='asis'}
+#         library(caret)
+#         library(xtable)
+#         
+#         c_matrix<-confusionMatrix(Analysis_df$crash, Analysis_df$snow)
+# 
+#         c_matrix_class_df<-as.data.frame(c_matrix$byClass)
+#         colnames(c_matrix_class_df)<-c("Value")
+#     
+#         print(xtable(c_matrix_class_df), type='html')
+#         
+#         c_matrix_class_df<-as.data.frame(c_matrix$table)
+#     
+#     
+#         print(xtable(c_matrix_class_df), type='html')
+# 
+# 
+#         print(c_matrix)
 
 ```
-
-Hence according to the regression model `r round(a[2,1],2)` is the increase in odds from no snow to snow. 
-
-Need to think about this one a bit...
-
-###Time of Day
-
-To look for correations with time of day need to simplify data to include only days with crashes (since it makes no sense to include a time of day for a day with no crash)
-
+        
 ```{r}
-require(ggplot2)
-
-hist(hwy_df$hour, breaks = 24, col="lightblue")
-
-#tt<-hwy_df[hwy_df$hour<2|hwy_df$hour>4,]
-#tt[1:30, c("created", "text", "hour", "hourdelta")]
-
-```
   
-###Conclusions
-
-It appears twitter records can be used to understand road safety in a quantitative way.
-The data show a significant correlation of road conditions to traffic safety, with an increase in the odds of an accident increasing nearly a factor of 12 when snowy conditions are reported. 
-
-A next step in this anlaysis will be to use additional data features to improve prediction. 
-
-
-
-
-
-
-
-
+darkviolet_x<-	#552683
+darkyellow_x<-	#E7A922
+white_x <-	#FFFFFF
+gray_x<-	#A9A8A7
+darkyellow_y<-	#CA8B01 
+            
+            
+            
+            
+            
+           
+            
+        
+```

@@ -3,9 +3,10 @@
 
 ## You will need to provide your own keys
 
-require(twitteR)
-require(ROAuth)
+library(twitteR)
+library(ROAuth)
 
+## create URLs
 reqURL <- "https://api.twitter.com/oauth/request_token"
 accessURL <- "https://api.twitter.com/oauth/access_token"
 authURL <- "https://api.twitter.com/oauth/authorize"
@@ -37,7 +38,7 @@ user <- getUser(paste0("@", name))
 ## n is an adjustable variable
 ## user_data is a generic filename
 
-user_data<-userTimeline(user, n=2000, maxID=NULL, sinceID=NULL, includeRts=FALSE)
+user_data<-userTimeline(user, n=3000, maxID=NULL, sinceID=NULL, includeRts=FALSE)
 
 
 ##convert data to dataframe
@@ -47,10 +48,10 @@ clean_data<-do.call(rbind,lapply(user_data,as.data.frame))
 ##convert times to R format
 #clean_data$created<-as.Date(clean_data$created)
 
-write.csv(clean_data, paste0(name,"_N",".csv"))
+write.csv(clean_data, paste0(name,"_NN",".csv"))
 
 ##display a bunch of stuff
-print(paste0(name,"_N",".csv"))
+print(paste0(name,"_NN",".csv"))
 dim(clean_data)
 head(clean_data)
 
