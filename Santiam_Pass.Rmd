@@ -77,6 +77,8 @@ hwy_df<-hwy_df[!duplicated(hwy_df$created),]
         trim.leading <- function (x)  sub("^\\s+", "", x)
 
         plotdata$direction <- trim.leading(as.character(plotdata$direction))
+        
+        print(head(plotdata))
 
         #Sign the distance based on direction
 

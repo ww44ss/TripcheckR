@@ -2,29 +2,26 @@
 ---
 title: "Predicting Road Safety from Twitter"
 author: "Winston Saunders"
-date: "Dec 2014"
+date: "October 2015"
 output: html_document
 ---
 
-#####Analysis of winter road safety probabilities for Santiam Pass, Oregon_
+###Analysis of winter road safety probabilities for Santiam Pass, Oregon  
 
 ###Summary
 
-The [Oregon Dept of Transportation](https://tripcheck.com/Pages/Twitter.asp) regularly publishes, as a public service, live road reports via Twitter. The record created by these tweets is a great public service since drivers can get real time information about road conditions.  
+It's hard for the average person to find historical information about road safety, such as accident rate information based on location, time of day, and weather conditions. 
 
-However, this data can also be repurposed to recontruct events on specific sections of road over a longer baseline and to correlate them with road conditions, etc. for statistical analysis. That is the purpose of this analysis.
+However, the [Oregon Dept of Transportation](https://tripcheck.com/Pages/Twitter.asp) regularly publishes, as a public service, live road reports via Twitter. This creates, in effect, a record of conditions and traffic incidents which can be mined.  
 
-This analysis can benefit drivers. The "average" citizen has today few ways to learn or benefit from historical data about road safety. However, as better navigation tools and even self-driving cars become available, analysis of historical data may not only improve travel times, but might also be used to improve travel safety through the choice of driving routes, driving time, or avoiding certain road conditions.
+This analysis repurposes the ODOT twitter feed to recontruct historical events on a specific section of road. Here we look at accident rates taking the last 3000 tweets from the Tripcheck Highway 20B twitter account as an example. The focus area is US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79) of Oregon. 
 
-This article seeks to understand whether twitter data can be used for this purpose and to develop a predictive machine learning algorithm.
+As the main route from the Central Oregon city of Bend to the Willamette Valley cities of Portland, Eugene, and Salem, Highway20 has high traffic year round and is the site of [frequent](http://www.nuggetnews.com/archives/960717/front1.shtml) accidents. 
 
-Analysis focuses on a specific location, US Highway 20 at Santiam Pass, a 4800 foot (1450 meters) mountain pass in the Cascade Range (milepost 79) of Oregon. As the main route from the Central Oregon city of Bend to the Willamette Valley cities of Portland, Eugene, and Salem, Highway20 has high traffic year round and is the site of [frequent](http://www.nuggetnews.com/archives/960717/front1.shtml) accidents. 
-
-This analysis use historical data from Twitter to understand the correlation of accidents on this specific section of road to reported snowy road conditions. 
 
 ###Getting the Tweets
 
-The twitter feed for this analysis is downloaded by a separate R program (Since I could not get RStudio to allow me to enter the required security features during runtime execution). The data are stored as a .csv of Tweets locally. 
+The twitter feed for this analysis is downloaded by a separate R program and stored locally in a .csv file. 
 
 
 ```{r "get_tweets", echo=FALSE, warning=FALSE}
@@ -33,9 +30,9 @@ library(bitops)
 library(RCurl)
 
 ##This program assumes you have already run the TwitterReader.R to download a feed timeline. 
-##It reads the data in teh form of a .csv 
+##It reads the data from teh twitter API and stores it in the form of a .csv 
 
-## Get the relevnat tweet data
+## Get the relevant tweet data
 
         if (getwd()=="/Users/winstonsaunders/Documents") {setwd("TripcheckR")}
         if (getwd()!="/Users/winstonsaunders/Documents/TripcheckR") {setwd("/Users/winstonsaunders/Documents/TripcheckR")}
@@ -98,12 +95,46 @@ library(RCurl)
 
 The data analyzed cover the dates from `r tEnd` to `r tStart`. There are `r dim(hwy_df)[1]` tweets during this period. 
 
-Data are cleaned by searching the text for the strings "crash" and "snow" and then filtered for location "Santiam Pass Summit". A few instances of cleaned and engineered date are shown above.
+Data are cleaned by searching the text for the strings "crash" and "snow" and then filtered for location "Santiam Pass Summit". Dates are converted to decimal hours (AM and PM) and also a "timeperiod." Below is an example of a very simple "text filter" function.
 
+```{r, 'trip filter code example', eval=FALSE}
+trip_incident_filter <- function(data_df, incident = "crash"){
+##FUNCTION filtering tweets for incidents 
+            ## accepts: data frame requiring text field to search
+            ## returns: selected rows containing serach string
 
+            ## filter incidents
+            hwy_inc <-data_df[grep(tolower(incident), tolower(data_df$text)),]
+
+            return(hwy_inc)
+            }
+        
+```
+
+A few instances of cleaned and engineered raw data are shown below.
+
+```{r echo=FALSE, fig.align='center', results='asis'}
+
+library(xtable)
+temptable<-xtable(hwy_df[1:8,c(1,2,7)])
+print(temptable, type="html", size="small")
+        
+```
+        
+        
 ## Data Analysis
 
-```{r "clean", echo=FALSE, warning=FALSE, message=FALSE}
+###Highway 20
+
+First let's look at the accident data for the entire Highway20B twitter feed.  
+A histogram of accidents versus hour in the day shows what might be expected behavior. Low levels overnight, showing a sharper increase at the start of the morning commute and then rising throughout the workday to a peak at 6:00 PM followed by a sharp decline into late evening. 
+
+```{r, eval=FALSE, echo=FALSE}
+## Filter for crashes
+hwy_crash<-trip_incident_filter(hwy_df, "crash")
+```
+
+```{r "clean", echo=FALSE, warning=FALSE, message=FALSE, fig.height=5}
 
 
         trip_incident_filter <- function(data_df, incident = "crash"){
@@ -152,24 +183,154 @@ Data are cleaned by searching the text for the strings "crash" and "snow" and th
         
         hwy_crash_santiam<-inc_dedupe(hwy_crash_santiam)
         
+        bb<-hwy_crash_santiam
+        
+        hwy_crash_santiam<-bb
         
         library(ggplot2)
         
-        p <- ggplot(hwy_crash_santiam, aes(x = hour)) + geom_histogram(fill="salmon", color="darkred", binwidth=1)
-        p <- p + theme_bw()
+        AMPM <- function(x) {if (x>12) z<-"PM" else z<-"AM"
+                            return(z)
+                            }
+        
+        hwy_crash_santiam$hour12<-hwy_crash_santiam$hour %% 12
+        hwy_crash_santiam$ampm <-sapply(hwy_crash_santiam$hour, AMPM)
+        
+        hwy_crash$hour12<-hwy_crash$hour %% 12
+        hwy_crash$ampm <- sapply(hwy_crash$hour, AMPM)
+        
+        hwy_crash$weekday <- weekdays(as.Date(hwy_crash$date, "1970-01-01"))
+        hwy_crash$weekday <- factor(hwy_crash$weekday, levels= c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+        
+        hwy_crash_santiam$weekday <- weekdays(as.Date(hwy_crash_santiam$date, "1970-01-01"))
+        hwy_crash_santiam$weekday <- factor(hwy_crash_santiam$weekday, levels= c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"))
+        
+        ## define time units
+        hour.pos <- seq(0, 12, 12/(12*60))[1:720]
+        min.pos <-seq(0,12, 12/60)[1:60]
+        all.hours <- rep(hour.pos, 2)
+   
+        ## DEFINE PLOT THEME
+        ## colors
+        bach_brown<-"#6A534B"
+        bach_darkblue<-"#354B60"
+        bach_lightblue<-"#696468"
+        bach_darkdarkblue<-"#1E2F37"
+        bach_skyblue<-"#375C91"
+        
+        santiam_theme <- function() {
+            theme(
+            plot.background = element_rect(fill = 'grey76', colour = 'grey76'),
+            panel.background = element_rect(fill = "grey76"),
+            panel.background = element_rect(fill = "grey70"),
+            axis.text = element_text(colour = bach_darkdarkblue, family = "Arial", size = 10),
+            plot.title = element_text(colour = bach_darkdarkblue, face = "bold", size = 18, vjust = 1, family = "Arial"),
+            axis.title = element_text(colour = "black", face = "bold", size = 14, family = "Arial"),
+            panel.grid.major.x = element_line(colour = bach_lightblue),
+            panel.grid.minor.x = element_blank(),
+            panel.grid.major.y = element_blank(),
+            panel.grid.minor.y = element_blank(),
+            strip.text = element_text(family = "Impact", colour = "white"),
+            strip.background = element_rect(fill = bach_darkblue),
+            axis.ticks = element_line(colour = bach_darkblue),
+            legend.position="none"
+            )
+        }
+        
+        
+               santiam_theme2 <- function() {
+            theme(
+            plot.background = element_rect(fill = 'white', colour = 'white'),
+            panel.background = element_rect(fill = "grey76"),
+            legend.background = element_rect(fill="gray70"),
+            axis.text = element_text(colour = bach_darkdarkblue, family = "Arial", size = 10),
+            plot.title = element_text(colour = bach_darkdarkblue, face = "bold", size = 18, vjust = 1, family = "Arial"),
+            axis.title = element_text(colour = "black", face = "bold", size = 14, family = "Arial"),
+            #panel.grid.major.x = element_line(colour = bach_lightblue),
+            #panel.grid.minor.x = element_blank(),
+            #panel.grid.major.y = element_blank(),
+            #panel.grid.minor.y = element_blank(),
+            strip.text = element_text(family = "Impact", colour = "white"),
+            strip.background = element_rect(fill = bach_darkblue),
+            axis.ticks = element_line(colour = bach_darkblue)
+            )
+ }
+    
+               
+```
+
+
+
+```{r, 'hwy20 histo', echo=FALSE, fig.align='center', fig.width=6, fig.height=4}
+        p <- ggplot(hwy_crash, aes(x = hour, fill=factor(weekday))) 
+        p <- p + geom_histogram(binwidth=3.0)
+        p <- p + santiam_theme2()
+        p <- p + scale_fill_manual(name = "Weekday",values = c("#696488","#796488","#896488","#996488","#A96488","#5974F8","#5974D8"))
+        p <- p + ggtitle("Highway 20B Crashes")
+        print(p)
+        
+```
+
+The accident rates above show little day to day variation. Another visualization makes variations from horu to hour and day to day clearer. 
+
+
+```{r "plot hwy20 clocks", echo=FALSE, warning=FALSE, message=FALSE, fig.width=9, fig.align='center'}
+        p <- ggplot(hwy_crash, aes(x = hour12, fill="#856BC8")) + geom_histogram(color="#854BA8", binwidth=4)
+        p <- p +scale_x_continuous(limits=c(0,12), breaks=0:11, labels=c(12, 1:11))
+        p <- p + facet_grid(ampm~weekday)
+        p <- p + santiam_theme() + coord_polar()
+        p <- p + ggtitle("Highway 20B Crashes")
+        print(p)
+```
+
+Morning commute hours tend to show higher accident rates, as do most evening hours between 4 and 8 pm. 
+
+###Zooming in on Santiam Pass
+
+
+We can also zoom in on Santiam Pass using the same filter above. 
+
+```{r, 'santiam filter example', eval=FALSE}
+## Filter crash data for santiam pass
+hwy_crash_santiam<-trip_incident_filter(hwy_crash, "santiam")
+```
+
+Here the histogram shows different variation that the overall highway, supporting the hypothesis that accident conditions are highly location specific.
+
+```{r, 'santiam histo', echo=FALSE, fig.align='center', fig.width=6, fig.height=4}
+        p <- ggplot(hwy_crash_santiam, aes(x = hour, fill=factor(weekday))) 
+        p <- p + geom_histogram(binwidth=3.0)
+        p <- p + santiam_theme2()
+        p <- p + scale_fill_manual(name = "Weekday", values = c("#696488","#796488","#896488","#996488","#A96488","#5974F8","#5974D8"))
         p <- p + ggtitle("Accidents on Santiam")
         print(p)
         
-        p <- ggplot(hwy_crash, aes(x = hour)) + geom_histogram(fill="blue", color="darkblue", binwidth=0.5)
-        p <- p + theme_bw()
-        p <- p + ggtitle("All Hwy20 Crashes")
+```
+
+And the familiar "clock" plot shows variations that are distinct from teh overall highway pattern For instance Monday early morning appear to have excpetionally high rates of accident, whereas midday on Monday appears to have fewer accidents. Late Friday afternoon also appears to stand out as a period of higher frequency. 
+
+```{r "plot santiam clocks", echo=FALSE, warning=FALSE, message=FALSE, fig.width=9, fig.align='center'}
+        p <- ggplot(hwy_crash_santiam, aes(x = hour12, fill="bach_lightblue")) + geom_histogram(color="#354B68", binwidth=4 )
+        p <- p + scale_x_continuous(limits=c(0,12), breaks=0:11, labels=c(12, 1:11))
+        p <- p + santiam_theme()
+        p <- p + facet_grid(ampm~weekday)
+        p <- p + ggtitle("Accidents on Santiam")
+        p<-p+ coord_polar()
         print(p)
+ 
         
+```
+
+
+```{r, echo=FALSE}
     
         ##Numbers of accidents adn snow for later use
 
         nAcc <- nrow(hwy_crash)
         nSnow <- nrow(hwy_snow)
+        
+        tStart_c<- as.character(format(tStart, "%d %b %Y"))
+        tEnd_c<- as.character(format(tEnd, "%d %b %Y"))
         
         #nAcc_santiam <- nrow(hwy_crash_santiam)
         #nSnow_santiam <- nrow(hwy_snow_santiam)
@@ -178,14 +339,20 @@ Data are cleaned by searching the text for the strings "crash" and "snow" and th
 
 ```
 
-###Data analysis and reduction
-
-To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and then add two binary columns, one for whether a crash occured that day and whether snow was reported on the road. A few rows of the dataframe are shown.
 
 
-```{r, echo=FALSE}
+###The Role of Weather
 
+To analyze the data we can create a dataframe of dates from `r tEnd_c` to `r tStart_c` and then add features for whether a crash occured, day of the week, whether weather conditions, etc.
+
+
+
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+    library(timeDate)
+        
     snow_days<-hwy_snow$date
+    snow_days<-unique(snow_days)
         
     hwy_crash_santiam$snow_day <- (hwy_crash_santiam$date %in% snow_days)
     hwy_crash_santiam$weekday <- weekdays(as.Date(hwy_crash_santiam$date, "1970-01-01"))
@@ -193,9 +360,9 @@ To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and 
 
 ```
 
-```{r, echo=FALSE}
+```{r, "Analysis Data Frame", echo=FALSE, warning=FALSE}
     
-    
+  
     ##CREATE TREE ANALYSIS DATA FRAME  
     
     ## create a list of all dates
@@ -212,42 +379,31 @@ To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and 
     
     Analysis_df$crash <- (Analysis_df$date %in% hwy_crash_santiam$date)
     
-    #Analysis_df$crash[Analysis_df$crash==TRUE]<-"crash"
-    #Analysis_df$crash[ Analysis_df$crash==FALSE]<-"safe"
-    #Analysis_df$crash<-as.character(Analysis_df$crash)
-    #Analysis_df$crash<-as.factor(Analysis_df$crash)
-    
-    
     Analysis_df$snow <- (Analysis_df$date %in% hwy_snow$date)
     
-    Analysis_df$snow[Analysis_df$snow==TRUE]<-"snow"
-    Analysis_df$snow [Analysis_df$snow ==FALSE]<-"clear"
+    
+    ## snow factor 
     Analysis_df$snow <-as.character(Analysis_df$snow )
     Analysis_df$snow <- as.factor(Analysis_df$snow )
     
-    
+    ##weekday factor
     Analysis_df$weekday <- weekdays(as.Date(Analysis_df$date, "1970-01-01"))
     
     ##Holidays
         library(timeDate)
         holidays_list = holidayNYSE(2005:2015)
         holidays_df<-as.Date(holidays_list)
-    Analysis_df$holiday <-  (Analysis_df$date %in% holidays_df)
+        Analysis_df$holiday <-  (Analysis_df$date %in% holidays_df)
     
+    Analysis_df$holiday <- as.factor(Analysis_df$holiday)
     
-    
-    ## assign label
-    #Analysis_df$holiday[Analysis_df$holiday == TRUE] <- "holiday"
-    #Analysis_df$holiday[Analysis_df$holiday == FALSE] <- "nonholiday"
-    #Analysis_df$holiday<-as.factor(Analysis_df$holiday)
-    
-    print(head(Analysis_df, 50))
     
     ## Add weekend
     Analysis_df$weekend <- Analysis_df$weekday == "Sunday" | Analysis_df$weekday == "Saturday"
 
     
     ## Long Weekend
+    ## This requires a bit of computation
     Analysis_df$longweekend<-rep(FALSE, nrow(Analysis_df))
     
     for (i in 3:(length(Analysis_df$date-3))) {
@@ -278,33 +434,103 @@ To analyze the data create a dataframe of dates from `r tStart` to `r tEnd` and 
         
     }
      
+    
     Analysis_df$weekday<-as.factor(Analysis_df$weekday)
-    
-    
+    Analysis_df$longweekend<-as.factor(Analysis_df$longweekend)
 ```
 
 
+```{r, echo=FALSE, results='asis'}  
+    library(xtable)
+    ## print first few rows of data
+    temp_t <- head(Analysis_df, 10)
+    temp_t$date <- format(temp_t$date, "%d %b %Y")
+    print(xtable(temp_t), type="html", size="small")
+```
+
+###Confusion Matrix looking at Snow Correlation to Crashes
+
+```{r, echo=FALSE, results='asis'}  
+    library(xtable)
+    
+        
+    ## compute confusion matrix
+    confusion_table<-table(Analysis_df$snow,Analysis_df$crash)
+   
+```
+
+The confusion table shows there is a substantial error rate in using snow as a predictor of crashes. 
 
 
+```{r, echo=FALSE, message=FALSE, results="asis"}
+        library(caret)
+        library(xtable)
+     
+        c_matrix<-confusionMatrix(Analysis_df$snow,Analysis_df$crash)
 
+        print(xtable(as.matrix(c_matrix)), type="html")
+    
+```
+
+There are `r length(Analysis_df$snow[Analysis_df$snow==TRUE])` snow days and `r length(Analysis_df$crash[Analysis_df$crash==TRUE])` crashes.
+
+The numbers are highly skewed. 
+The model (crash ~ snow) thus very low negative predictive value (the model does predcts a lot of false accidents) and specificity (the fraction of actual accident cases predicted correctly) are therefore expected.
+
+Nevertheless, it does show that snow conditions contribute to a much higher accident rate. Obviously other factors must be playing a role. 
+
+
+```{r, echo=FALSE, results="asis"}
+    
+    ## Get the conditional classes and fix names    
+    cm_df<-as.data.frame(as.matrix(c_matrix$byClass))
+    colnames(cm_df)<-"Value"
+        
+    print(xtable(cm_df), type="html")
+        
+```        
+        
+
+
+```{r, echo=FALSE, results='asis'}
+   
+        #print(xtable(c_matrix$table), type='html')     
+        
+```
+
+###Decision Tree Analysis of multiple factors
+
+The decision tree analysis adds several other factors to the model. Given the earlier analysis I chose to look at the variables:  
+- snow  
+- weekday   
+- holiday  
+- long weekend  
 
 ```{r, echo=FALSE, fig.height=5, fig.width=9} 
         
         ##Fit the data
     
          ## get rid of holiday classifier
-        Analysis_df_t<- subset(Analysis_df, select = -holiday )
-
+        
         library(rpart)
         library(rpart.plot)
-        treefit<-rpart(crash~snow+weekday+longweekend+holiday, Analysis_df, method="class", control=rpart.control(minsplit=5, cp=0, xval=5))
+        treefit<-rpart(crash~snow+weekday+holiday+longweekend, Analysis_df, method="class", control=rpart.control(minsplit=2, cp=0, xval=5), cost=c(1,1,10,1))
         
 
-        prp(treefit, uniform=TRUE, main="Classification Tree for Crashes",type=0, extra=2, faclen=0)
+        prp(treefit, uniform=TRUE, main="Classification Tree for Crashes",type=3, extra=2, faclen=0)
         #text(treefit, use.n=TRUE, all=TRUE, cex=.7)
         
-        treefit
 ```
+
+We can see that snow is the largest factor and the tree analysis captures the results of the simple confusion matrix approach above correctly predicting 1211 True False cases and 71 False Postitves.
+
+A rough English interpretation of this tree analysis is farily powerful. To avoid accidents you should:  
+- avoid snowy days.   
+- avoid driving on Friday Saturday, and Monday in that order.  
+- and if you must drive on a long weekend, drive on a holiday. 
+
+This seems like a relatively sane set of rules. Additionally, paying attention to the time of day would also contribute to added safety. 
+
 
 
 <style>
@@ -314,7 +540,7 @@ table {
     border-collapse: collapse;
     border-spacing: 10px;
     border-color: gray;
-    background-color: #a1b2c3;
+    background-color: #61b263;
     align: center;
     font: 12px arial, sans-serif;
 }
@@ -326,40 +552,191 @@ th, td {
 </style>
 
 
-```{r, echo=FALSE, results='asis'}
-#         library(caret)
-#         library(xtable)
-#         
-#         c_matrix<-confusionMatrix(Analysis_df$crash, Analysis_df$snow)
-# 
-#         c_matrix_class_df<-as.data.frame(c_matrix$byClass)
-#         colnames(c_matrix_class_df)<-c("Value")
-#     
-#         print(xtable(c_matrix_class_df), type='html')
-#         
-#         c_matrix_class_df<-as.data.frame(c_matrix$table)
-#     
-#     
-#         print(xtable(c_matrix_class_df), type='html')
-# 
-# 
-#         print(c_matrix)
+##Accident Location
+
+The tweets also contain some rough location information (for example _"2 Miles E of Santiam Pass Summit"_). It makes sense to see if any additional insight, such as specifically dangerous sections of road, can be identified and correlated with specific road conditions. 
+
+```{r "clean2", echo=FALSE, warning=FALSE}
+        ##read in the raw data file
+        hwy_df<-read.csv(paste0(file_name, ".csv"))
+        ##make the date column a date
+        hwy_df$created<-as.Date(hwy_df$created)
+
+        
+        ##Define Search Patterns
+        location <- "Santiam Pass Summit"
+        ##Get tweets with S1
+        hwy_df <-hwy_df[grep(location, hwy_df$text),]
+        
+        incident <- "crash"
+        ## get tweets with S2
+        hwy_df <-hwy_df[grep(incident, hwy_df$text),]
+
+#       #dedup the data
+
+        hwy_df<-hwy_df[!duplicated(hwy_df$created),]
+
+        ##analyze the data
+
+        ## get some details on the crash from the text string
+        ##Find "Mi" maker and then extract miles number
+        
+        midist<-lapply(hwy_df$text, function(x) {y<- regexpr("Mi", x)
+                                                             if (y >4) substring(x,y-3,y-1)
+                                                             else "NA"})
+                                                            # if (y != FALSE) substring(x, y-3, y-1)})
+        
+        distance<-as.numeric(midist)
+        
+        ##extract direction data from tweet
+        direction<-lapply(hwy_df$text, function(x) {y<- regexpr("Mi", x)
+                                                             if (y >4) substring(x,y+2,y+3)
+                                                             else "NA"})
+        hwy_df$text<-substring(hwy_df$text,7,12)
+        
+        direction<-as.character(direction)
+
+        ##bind new columns to data frame
+        plotdata<-cbind(hwy_df, distance, direction ) 
+
+        ##reduce dimensions
+        plotdata<-plotdata[,c(6,18,19)]
+
+        ##filter for complete cases
+        plotdata<-plotdata[complete.cases(plotdata), ]
+
+        ##define function to strip spaces
+        trim.leading <- function (x)  sub("^\\s+", "", x)
+
+        plotdata$direction <- trim.leading(as.character(plotdata$direction))
+        
+        #Sign the distance based on direction
+
+        for(i in 1:nrow(plotdata)) {if(plotdata$direction[i] =="E" | plotdata$direction[i] =="S") plotdata$distance[i] <- -1*plotdata$distance[i]}
+                
+                
+
+##data are processed and ready to plot
 
 ```
-        
-```{r}
-  
-darkviolet_x<-	#552683
-darkyellow_x<-	#E7A922
-white_x <-	#FFFFFF
-gray_x<-	#A9A8A7
-darkyellow_y<-	#CA8B01 
-            
-            
-            
-            
-            
-           
-            
-        
+
+
+```{r "plot_the_data", echo=FALSE, fig.align='center', fig.width=8, fig.height=4}
+
+
+##timeline(plotdata)
+
+        rangeYM<- c(plotdata$created[dim(plotdata)[1]], plotdata$created[1])
+
+        ##index graph to start on first of month
+        # first decompose into components
+        d<-as.POSIXlt(rangeYM[1])
+        e<-unclass(d)
+        # Then subract appropriate number of days 
+        rangeYM[1]<-rangeYM[1]-e$mday+1
+
 ```
+
+The raw data cover a date range from `r rangeYM[1]` to `r rangeYM[2]` and there were `r 7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))` accidents per week.  
+
+Since the distance over which the accidents occured is `r max(plotdata$distance)-min(plotdata$distance)` miles, the accident density is `r 52*7 * nrow(plotdata)/as.numeric((rangeYM[2]- rangeYM[1]))/(max(plotdata$distance)-min(plotdata$distance))` accident/year/mile. 
+
+
+###Timeline and Location
+
+We can graph a timeline of accidents, with the location of the accident (measured in distance from the summit) represented by the y-axis. The positive direction is West.  
+
+
+
+```{r, echo=FALSE, fig.align='center', warning=FALSE}
+
+        ## use basic plot capability 
+        
+plot(NA,ylim=c(-10,10),xlim=rangeYM,ann=FALSE,axes=FALSE)
+abline(h=0,lwd=2,col="dodgerblue4")
+
+ypts <- plotdata$distance
+
+y0pts = rep_len(0, length.out=nrow(plotdata))
+txtpts <- rep_len(c(1,3), length.out=nrow(plotdata))
+ylblpts <- ypts
+lblpts <- rep_len(c(3,1), length.out=nrow(plotdata))
+segments(as.Date(plotdata$created),y0pts,as.Date(plotdata$created),ypts,col="gray80")
+
+axis.Date(
+ 1,
+ at=seq.Date(rangeYM[1],rangeYM[2],by="month"),
+ format="%Y-%m",
+ cex.axis=0.6,
+ pos=0,
+ lwd=0,
+ lwd.tick=2,
+ col="dodgerblue3",
+ font=1
+)
+
+points(plotdata$created,y=ypts, pch=20, cex=1.5, col="violetred2")
+
+title(main=paste(file_name, incident, "locations"), ylab="miles from summit W->")
+
+## add snow indicators to plot
+plotdata_s<-plotdata[plotdata$created %in% snow_days,]
+
+points(plotdata_s$created,y=plotdata_s$distance, pch=20, cex=.8, col="blue")
+
+```
+
+In the above plot dots with blue centers occurred on days when snow was reported over the pass.  
+It's significant to note that most accidents happen in the Winter months. An even more surprising artifact is that accidents East of the Summit appear to occur predominantly in the Winter months. Roughly 70% of accidents on the East Side of the pass are correlated to snow, a rate much higher than average.   
+
+###Accident Frequency Location Hot-Spots
+
+We also can use the location information to analyze the location of "accident hot spots." The location information provided on twitter is only precise to the nearest mile, so tighter accuracy is impossible with the data. Nevertheless, as the graph below shows, the a realtively short four mile stretch of road accounts for a majority of accidents.
+
+
+
+```{r, "map it", echo=FALSE, fig.align='center', fig.width=8, warning=FALSE, message=FALSE}
+
+library(ggmap)
+        
+    acc_table<-as.data.frame(table(ypts))
+        
+    ## manually entered table of map points
+    lat_x<-c(44.423313,44.424651,44.425309,44.422249,44.423021,44.430295,44.429037,44.429494,44.436968,44.433081,44.430264,44.423979)   
+    lon_x<-c(-121.802764,-121.824192,-121.842798, -121.856786,-121.878365, -121.882923,-121.902021,-121.923218,-121.940328,-121.957209,-121.976371,-121.994433)
+
+
+    ## location of Santiam Pass
+    santiam_loc<-c(lon=-121.8967,lat=44.42225)
+
+    mile_marks<-as.data.frame(cbind("lon"=lon_x, "lat"=lat_x, "n"=acc_table$Freq))
+
+    ## get the map
+    santiam_map<-get_googlemap(center=santiam_loc, maptype="terrain", zoom=12, scale=2)
+
+
+    ## plot the mape
+    ggmap(santiam_map)+ geom_point(aes(x=lon, y = lat, size=sqrt(n)), data=mile_marks, color="darkred", pch=20)
+
+
+
+
+```
+
+In the plot above the dot area represent the number of accidents in each locale. Since Tripcheck tweets are only precise to a given mile, more specific analysis cannot be done. 
+
+##Summary and Conclusions
+
+This analysis shows that the Twitter feeds of ODOT Tripcheck can be used to analyze aspects of road safety, specifically in looking at the detailed behavior of "accident hot spots" as correlated to various events. 
+
+Data acquisition is easily accomplished thru the Twitter API and cleaning the data, once acquired, is straight forward.
+
+Santiam Pass is an area with high density of accidents. 
+
+Snow is the strongest correlator to accidents, with time of day also playing a strong role, though weekday and time of day are also highly correlated to accident frequency. 
+
+A tree analysis shows that if one's desire is to avoid accidents, following some simple rules like avoiding snow and driving on less busy days like Tuesday, Wednesday, Thursday, and Sunday is advisable.
+
+We also found that certain sections of road are more prone to snow-related accidents. For instance the few miles East of Santiam pass roughtly 70% of the accidents occur when there is snow on the road. 
+
+The Twitter Feed from ODOT indeed contains siginficant information relevant to public safety, especially for drivers wanting to understand risk factors on roads outside their control. This analysis can easily be extended to other road areas around the state. 
